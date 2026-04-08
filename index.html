@@ -3,24 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>SaaS Conveniência Pro · Gestão Completa</title>
-  <!-- Bibliotecas de Scanner -->
-  <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+  <title>Conveniência · Sistema de Estoque</title>
   <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
-  <!-- Chart.js para gráficos -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
     body {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #f3f4f6;
       min-height: 100vh;
     }
 
@@ -30,201 +25,147 @@
       min-height: 100vh;
     }
 
-    #main-content {
-      flex: 1;
+    /* Header */
+    .header {
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .stats-mini {
+      display: flex;
+      gap: 20px;
+      color: #6b7280;
+      font-size: 0.9rem;
+    }
+
+    /* Navegação */
+    .nav {
+      display: flex;
+      gap: 4px;
+      padding: 16px 24px 0 24px;
+      border-bottom: 1px solid #e5e7eb;
+      background: white;
+    }
+
+    .nav-btn {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 6px 6px 0 0;
+      cursor: pointer;
+      font-weight: 500;
+      color: #6b7280;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.15s;
+    }
+
+    .nav-btn:hover {
+      background: #f9fafb;
+      color: #374151;
+    }
+
+    .nav-btn.active {
+      background: #f3f4f6;
+      color: #2563eb;
+      border-bottom: 2px solid #2563eb;
+    }
+
+    /* Conteúdo */
+    .content {
       padding: 24px;
-      max-width: 1400px;
-      margin: 0 auto;
-      width: 100%;
+      flex: 1;
     }
 
-    /* Animações */
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    /* Cards e containers */
+    /* Cards */
     .card {
       background: white;
-      border-radius: 20px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
       padding: 24px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      animation: slideIn 0.3s ease-out;
-      margin-bottom: 24px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
     }
 
     /* Botões */
     .btn {
-      padding: 10px 20px;
-      border-radius: 12px;
-      border: none;
-      font-weight: 600;
-      font-size: 0.95rem;
+      padding: 8px 16px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-weight: 500;
+      font-size: 0.9rem;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.15s;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
       background: white;
-      border: 1px solid #e2e8f0;
+      color: #374151;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: #2563eb;
       color: white;
-      border: none;
+      border-color: #2563eb;
     }
 
     .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+      background: #1d4ed8;
     }
 
     .btn-success {
-      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+      background: #059669;
       color: white;
-      border: none;
+      border-color: #059669;
     }
 
     .btn-danger {
-      background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+      background: #dc2626;
       color: white;
-      border: none;
+      border-color: #dc2626;
     }
 
-    .btn-warning {
-      background: linear-gradient(135deg, #f2994a 0%, #f2c94c 100%);
-      color: white;
-      border: none;
+    .btn-sm {
+      padding: 4px 8px;
+      font-size: 0.85rem;
     }
 
-    .btn-outline {
-      background: transparent;
-      border: 1px solid #cbd5e1;
-    }
-
-    .btn-outline:hover {
-      background: #f8fafc;
-    }
-
-    /* Inputs e selects */
+    /* Inputs */
     input, select, textarea {
-      padding: 12px 16px;
-      border-radius: 12px;
-      border: 2px solid #e1e8ed;
-      font-size: 1rem;
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid #d1d5db;
+      font-size: 0.95rem;
       outline: none;
-      transition: all 0.3s;
+      transition: border 0.15s;
       background: white;
     }
 
-    input:focus, select:focus {
-      border-color: #667eea;
-      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-    }
-
-    /* Tabs de navegação */
-    .nav-tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      background: rgba(255,255,255,0.1);
-      padding: 8px;
-      border-radius: 16px;
-      backdrop-filter: blur(10px);
-    }
-
-    .nav-tab {
-      padding: 12px 24px;
-      background: transparent;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.3s;
-      color: white;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-tab:hover {
-      background: rgba(255,255,255,0.1);
-    }
-
-    .nav-tab.active {
-      background: white;
-      color: #667eea;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.1);
-    }
-
-    /* Estatísticas */
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-
-    .stat-card {
-      background: white;
-      padding: 24px;
-      border-radius: 20px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .stat-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 4px;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-    }
-
-    .stat-label {
-      color: #64748b;
-      font-size: 0.9rem;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .stat-value {
-      font-size: 2.5rem;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 10px 0;
-    }
-
-    .stat-trend {
-      color: #10b981;
-      font-size: 0.9rem;
-      display: flex;
-      align-items: center;
-      gap: 4px;
+    input:focus, select:focus, textarea:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
     }
 
     /* Tabelas */
     .table-wrapper {
       overflow-x: auto;
-      border-radius: 16px;
+      border-radius: 6px;
+      border: 1px solid #e5e7eb;
     }
 
     table {
@@ -235,36 +176,40 @@
 
     th {
       text-align: left;
-      padding: 16px 12px;
-      background: #f8fafc;
+      padding: 12px;
+      background: #f9fafb;
       font-weight: 600;
-      color: #334155;
-      border-bottom: 2px solid #e2e8f0;
+      color: #374151;
+      border-bottom: 1px solid #e5e7eb;
     }
 
     td {
-      padding: 14px 12px;
-      border-bottom: 1px solid #f1f5f9;
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
     }
 
-    /* Badges e alertas */
+    tr:hover {
+      background: #f9fafb;
+    }
+
+    /* Badges */
     .badge {
-      background: #e0e7ff;
-      color: #4338ca;
-      padding: 4px 12px;
-      border-radius: 20px;
+      background: #e5e7eb;
+      color: #374151;
+      padding: 2px 8px;
+      border-radius: 4px;
       font-size: 0.85rem;
       font-weight: 500;
     }
 
-    .alert-badge {
+    .badge-success {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-danger {
       background: #fee2e2;
       color: #dc2626;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      animation: pulse 2s infinite;
     }
 
     /* Scanner Modal */
@@ -275,9 +220,8 @@
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.95);
-      z-index: 10000;
+      z-index: 9999;
       display: none;
-      animation: fadeIn 0.3s;
     }
 
     .scanner-container {
@@ -288,18 +232,18 @@
     }
 
     .scanner-header {
-      background: linear-gradient(135deg, #667eea, #764ba2);
       padding: 20px;
       color: white;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      background: #1f2937;
     }
 
-    .scanner-viewport {
+    .scanner-video-container {
       flex: 1;
       position: relative;
-      background: #000;
+      background: black;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -311,15 +255,6 @@
       object-fit: cover;
     }
 
-    .scanner-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-    }
-
     .scanner-guide {
       position: absolute;
       top: 50%;
@@ -327,136 +262,39 @@
       transform: translate(-50%, -50%);
       width: 280px;
       height: 180px;
-      border: 3px solid #00ff00;
-      border-radius: 20px;
+      border: 3px solid #10b981;
+      border-radius: 8px;
       box-shadow: 0 0 0 9999px rgba(0,0,0,0.5);
-      animation: pulseGuide 2s infinite;
     }
 
-    @keyframes pulseGuide {
-      0%, 100% { border-color: #00ff00; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 20px #00ff00; }
-      50% { border-color: #00aa00; box-shadow: 0 0 0 9999px rgba(0,0,0,0.5), 0 0 40px #00ff00; }
-    }
-
-    .scanner-controls {
-      background: rgba(0,0,0,0.9);
+    .scanner-footer {
       padding: 20px;
+      background: #1f2937;
       display: flex;
       gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
     }
 
     .scanner-btn {
       padding: 12px 24px;
       border: none;
-      border-radius: 12px;
-      font-weight: 600;
+      border-radius: 6px;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      background: #374151;
+      color: white;
+    }
+
+    .scanner-btn.primary {
+      background: #2563eb;
     }
 
     .scanner-result {
-      background: rgba(255,255,255,0.1);
+      background: #111827;
       color: white;
       padding: 12px 20px;
-      border-radius: 12px;
       text-align: center;
-      font-size: 1.2rem;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-
-    .scanner-history {
-      max-height: 200px;
-      overflow-y: auto;
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 15px;
-      border-radius: 12px;
-      margin-top: 10px;
-    }
-
-    .history-item {
-      padding: 8px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      display: flex;
-      justify-content: space-between;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .history-item:hover {
-      background: rgba(102, 126, 234, 0.3);
-    }
-
-    .camera-switch, .torch-btn {
-      position: absolute;
-      bottom: 100px;
-      background: rgba(0,0,0,0.7);
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      z-index: 10;
-    }
-
-    .camera-switch { right: 20px; }
-    .torch-btn { left: 20px; }
-
-    .scan-indicator {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.7);
-      color: #00ff00;
-      padding: 8px 16px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      z-index: 10;
-    }
-
-    .scan-indicator.scanning {
-      animation: blink 1s infinite;
-    }
-
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .camera-selector {
-      background: rgba(0,0,0,0.8);
-      color: white;
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
-      margin: 0 10px;
-    }
-
-    /* Gráficos */
-    .chart-container {
-      position: relative;
-      height: 300px;
-      margin: 20px 0;
-    }
-
-    /* Toast */
-    #toast-container {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      z-index: 9999;
+      font-size: 1.1rem;
+      border-top: 1px solid #374151;
     }
 
     /* Modal */
@@ -467,116 +305,165 @@
       width: 100%;
       height: 100%;
       background: rgba(0,0,0,0.5);
-      backdrop-filter: blur(5px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 9998;
+      z-index: 10000;
     }
 
     .modal {
       background: white;
-      border-radius: 24px;
+      border-radius: 8px;
+      padding: 24px;
       max-width: 600px;
       width: 90%;
-      max-height: 90vh;
+      max-height: 80vh;
       overflow-y: auto;
-      padding: 30px;
     }
 
-    /* Responsividade */
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1f2937;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 8px;
+      z-index: 10001;
+      animation: slideUp 0.3s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .toast-error {
+      background: #dc2626;
+    }
+
+    .toast-success {
+      background: #059669;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translate(-50%, 20px);
+      }
+      to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+    }
+
+    /* Grid e utilitários */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    .mb-4 {
+      margin-bottom: 16px;
+    }
+
+    .mt-4 {
+      margin-top: 16px;
+    }
+
+    .flex {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .w-full {
+      width: 100%;
+    }
+
+    /* Responsivo */
     @media (max-width: 768px) {
-      #main-content { padding: 16px; }
-      .stats-grid { grid-template-columns: 1fr; }
-      .nav-tabs { justify-content: center; }
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+      
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      
+      .nav {
+        overflow-x: auto;
+        white-space: nowrap;
+      }
     }
   </style>
 </head>
 <body>
   <div id="app">
     <!-- Header -->
-    <div id="header-container"></div>
-
-    <!-- Conteúdo Principal -->
-    <main id="main-content"></main>
-
-    <!-- Footer -->
-    <div id="footer-container"></div>
+    <header class="header">
+      <div class="logo">
+        <i class="fas fa-store"></i>
+        Minha Conveniência
+      </div>
+      <div class="stats-mini">
+        <span><i class="fas fa-box"></i> <span id="totalProdutos">0</span> produtos</span>
+        <span><i class="fas fa-shopping-cart"></i> <span id="vendasHoje">0</span> vendas hoje</span>
+      </div>
+      <div class="flex">
+        <button class="btn btn-primary" onclick="abrirScanner()">
+          <i class="fas fa-barcode"></i> Scanner
+        </button>
+      </div>
+    </header>
+    
+    <!-- Navegação -->
+    <div class="nav">
+      <button class="nav-btn active" data-page="estoque" onclick="mudarPagina('estoque')">
+        <i class="fas fa-boxes"></i> Estoque
+      </button>
+      <button class="nav-btn" data-page="cadastro" onclick="mudarPagina('cadastro')">
+        <i class="fas fa-plus-circle"></i> Cadastrar
+      </button>
+      <button class="nav-btn" data-page="vendas" onclick="mudarPagina('vendas')">
+        <i class="fas fa-shopping-cart"></i> Vendas
+      </button>
+    </div>
+    
+    <!-- Conteúdo -->
+    <div class="content" id="content"></div>
   </div>
-
-  <!-- Toast Container -->
-  <div id="toast-container"></div>
-
+  
   <!-- Scanner Modal -->
-  <div id="advanced-scanner" class="scanner-modal">
+  <div class="scanner-modal" id="scannerModal">
     <div class="scanner-container">
       <div class="scanner-header">
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <i class="fas fa-barcode" style="font-size: 24px;"></i>
-          <h2 style="margin: 0;">Scanner Avançado</h2>
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <select id="camera-select" class="camera-selector">
-            <option value="">Carregando câmeras...</option>
-          </select>
-          <button class="scanner-btn" onclick="scannerManager.close()" style="background: rgba(255,255,255,0.2); color: white;">
-            <i class="fas fa-times"></i> Fechar
-          </button>
-        </div>
-      </div>
-
-      <div class="scanner-viewport">
-        <video id="scanner-video" autoplay playsinline></video>
-        <div class="scanner-overlay">
-          <div class="scanner-guide"></div>
-          <div class="scan-indicator scanning" id="scan-indicator">
-            <i class="fas fa-search"></i>
-            <span>Escaneando...</span>
-          </div>
-          <button class="camera-switch" onclick="scannerManager.switchCamera()" title="Alternar câmera">
-            <i class="fas fa-sync-alt"></i>
-          </button>
-          <button class="torch-btn" onclick="scannerManager.toggleTorch()" title="Lanterna">
-            <i class="fas fa-lightbulb" id="torch-icon"></i>
-          </button>
-        </div>
-      </div>
-
-      <div class="scanner-controls">
-        <button class="scanner-btn" onclick="scannerManager.useManualEntry()" style="background: #667eea; color: white;">
-          <i class="fas fa-keyboard"></i> Digitar Código
-        </button>
-        <button class="scanner-btn" onclick="scannerManager.clearHistory()" style="background: rgba(255,255,255,0.1); color: white;">
-          <i class="fas fa-trash"></i> Limpar Histórico
-        </button>
-        <button class="scanner-btn" onclick="scannerManager.exportHistory()" style="background: rgba(255,255,255,0.1); color: white;">
-          <i class="fas fa-download"></i> Exportar
+        <h3><i class="fas fa-barcode"></i> Leitor de Código de Barras</h3>
+        <button class="scanner-btn" onclick="fecharScanner()">
+          <i class="fas fa-times"></i> Fechar
         </button>
       </div>
-
-      <div style="padding: 20px; background: rgba(0,0,0,0.9);">
-        <div class="scanner-result" id="last-scan-result">
-          <i class="fas fa-qrcode"></i> Último scan: <span id="last-scan-text">Nenhum</span>
-        </div>
-        
-        <div class="scanner-history" id="scanner-history">
-          <h4 style="margin-bottom: 10px; color: white;">
-            <i class="fas fa-history"></i> Histórico de Scans
-          </h4>
-          <div id="history-list"></div>
-        </div>
+      
+      <div class="scanner-video-container">
+        <video id="scanner-video"></video>
+        <div class="scanner-guide"></div>
       </div>
-    </div>
-  </div>
-
-  <!-- Modal de Entrada Manual -->
-  <div id="manual-entry-modal" class="modal-overlay" style="display: none;">
-    <div class="modal">
-      <h3><i class="fas fa-keyboard"></i> Digitar Código de Barras</h3>
-      <input type="text" id="manual-barcode-input" placeholder="Digite o código" style="width: 100%; margin: 20px 0; font-size: 1.2rem; text-align: center;">
-      <div style="display: flex; gap: 10px; justify-content: flex-end;">
-        <button class="btn" onclick="scannerManager.closeManualEntry()">Cancelar</button>
-        <button class="btn btn-primary" onclick="scannerManager.confirmManualEntry()">Confirmar</button>
+      
+      <div class="scanner-result" id="scannerResult">
+        <span id="lastScanText">🔍 Posicione o código de barras na área verde</span>
+      </div>
+      
+      <div class="scanner-footer">
+        <input type="text" id="manualBarcode" placeholder="Ou digite o código manualmente" style="flex:1; background:#374151; color:white; border-color:#4b5563;">
+        <button class="scanner-btn primary" onclick="usarCodigoManual()">
+          <i class="fas fa-check"></i> Usar
+        </button>
       </div>
     </div>
   </div>
@@ -584,692 +471,223 @@
   <script>
     // ========== DADOS GLOBAIS ==========
     let produtos = [];
-    let categorias = ['Bebidas', 'Doces', 'Salgados', 'Laticínios', 'Higiene', 'Limpeza', 'Outros'];
     let vendas = [];
-    let fornecedores = [];
-    let clientes = [];
-    let configuracoes = {
-      alertaEstoqueBaixo: 10,
-      moeda: 'BRL',
-      tema: 'light',
-      nomeLoja: 'Minha Conveniência'
-    };
-    let paginaAtual = 'dashboard';
-    let carrinhoVenda = [];
-
+    let paginaAtual = 'estoque';
+    let carrinho = [];
+    let scannerAtivo = false;
+    let codeReader = null;
+    let callbackScanner = null;
+    
     // ========== INICIALIZAÇÃO ==========
-    function inicializarDados() {
-      const stored = {
-        produtos: localStorage.getItem('conv_produtos'),
-        categorias: localStorage.getItem('conv_categorias'),
-        vendas: localStorage.getItem('conv_vendas'),
-        fornecedores: localStorage.getItem('conv_fornecedores'),
-        clientes: localStorage.getItem('conv_clientes'),
-        configuracoes: localStorage.getItem('conv_config')
-      };
-
-      if (stored.produtos) {
-        produtos = JSON.parse(stored.produtos);
+    function inicializar() {
+      const dados = localStorage.getItem('conveniencia_data');
+      if (dados) {
+        const data = JSON.parse(dados);
+        produtos = data.produtos || [];
+        vendas = data.vendas || [];
       } else {
+        // Dados de exemplo
         produtos = [
-          { id: '1', nome: 'Água Mineral 500ml', codigoBarras: '7891234567890', preco: 2.50, quantidade: 45, categoria: 'Bebidas', fornecedor: 'Distribuidora Águas', estoqueMinimo: 20 },
-          { id: '2', nome: 'Refrigerante Lata 350ml', codigoBarras: '7892345678901', preco: 4.99, quantidade: 8, categoria: 'Bebidas', fornecedor: 'Coca-Cola', estoqueMinimo: 15 },
-          { id: '3', nome: 'Chocolate Barra 100g', codigoBarras: '7893456789012', preco: 7.90, quantidade: 18, categoria: 'Doces', fornecedor: 'Nestlé', estoqueMinimo: 10 },
-          { id: '4', nome: 'Salgadinho 80g', codigoBarras: '7894567890123', preco: 6.50, quantidade: 5, categoria: 'Salgados', fornecedor: 'Elma Chips', estoqueMinimo: 12 },
-          { id: '5', nome: 'Café em Cápsulas 10un', codigoBarras: '7895678901234', preco: 19.90, quantidade: 3, categoria: 'Bebidas', fornecedor: 'Nespresso', estoqueMinimo: 8 }
+          { id: '1', nome: 'Água Mineral 500ml', codigo: '7891234567890', preco: 2.50, quantidade: 45, estoqueMinimo: 10 },
+          { id: '2', nome: 'Refrigerante Lata 350ml', codigo: '7892345678901', preco: 4.99, quantidade: 20, estoqueMinimo: 15 },
+          { id: '3', nome: 'Chocolate 100g', codigo: '7893456789012', preco: 7.90, quantidade: 15, estoqueMinimo: 10 },
+          { id: '4', nome: 'Salgadinho 80g', codigo: '7894567890123', preco: 6.50, quantidade: 8, estoqueMinimo: 12 },
+          { id: '5', nome: 'Café Expresso', codigo: '7895678901234', preco: 3.50, quantidade: 30, estoqueMinimo: 20 }
         ];
+        vendas = [];
       }
-
-      if (stored.categorias) {
-        categorias = JSON.parse(stored.categorias);
-      }
-
-      if (stored.vendas) {
-        vendas = JSON.parse(stored.vendas);
-      } else {
-        vendas = [
-          { id: 'v1', data: new Date(Date.now() - 86400000).toISOString(), itens: [{ id: '1', nome: 'Água Mineral 500ml', quantidade: 2, preco: 2.50 }], total: 5.00, cliente: 'Cliente Balcão' },
-          { id: 'v2', data: new Date().toISOString(), itens: [{ id: '2', nome: 'Refrigerante Lata', quantidade: 1, preco: 4.99 }], total: 4.99, cliente: 'João Silva' }
-        ];
-      }
-
-      if (stored.fornecedores) {
-        fornecedores = JSON.parse(stored.fornecedores);
-      } else {
-        fornecedores = [
-          { id: 'f1', nome: 'Distribuidora Águas', contato: '(11) 9999-9999', email: 'contato@aguas.com' },
-          { id: 'f2', nome: 'Coca-Cola', contato: '0800 123 456', email: 'vendas@coca.com' }
-        ];
-      }
-
-      if (stored.clientes) {
-        clientes = JSON.parse(stored.clientes);
-      } else {
-        clientes = [
-          { id: 'c1', nome: 'João Silva', telefone: '(11) 98888-7777', email: 'joao@email.com', totalCompras: 156.80 },
-          { id: 'c2', nome: 'Maria Santos', telefone: '(11) 97777-6666', email: 'maria@email.com', totalCompras: 89.90 }
-        ];
-      }
-
-      if (stored.configuracoes) {
-        configuracoes = JSON.parse(stored.configuracoes);
-      }
+      salvarDados();
+      atualizarStats();
+      mudarPagina('estoque');
     }
-
+    
     function salvarDados() {
-      localStorage.setItem('conv_produtos', JSON.stringify(produtos));
-      localStorage.setItem('conv_categorias', JSON.stringify(categorias));
-      localStorage.setItem('conv_vendas', JSON.stringify(vendas));
-      localStorage.setItem('conv_fornecedores', JSON.stringify(fornecedores));
-      localStorage.setItem('conv_clientes', JSON.stringify(clientes));
-      localStorage.setItem('conv_config', JSON.stringify(configuracoes));
+      localStorage.setItem('conveniencia_data', JSON.stringify({ produtos, vendas }));
     }
-
-    // ========== SISTEMA DE TOAST ==========
-    function showToast(message, type = 'success') {
-      const container = document.getElementById('toast-container');
+    
+    function atualizarStats() {
+      document.getElementById('totalProdutos').textContent = produtos.length;
+      const hoje = new Date().toDateString();
+      const vendasHoje = vendas.filter(v => new Date(v.data).toDateString() === hoje).length;
+      document.getElementById('vendasHoje').textContent = vendasHoje;
+    }
+    
+    // ========== TOAST ==========
+    function mostrarToast(mensagem, tipo = 'info') {
       const toast = document.createElement('div');
-      const colors = {
-        success: 'linear-gradient(135deg, #11998e, #38ef7d)',
-        error: 'linear-gradient(135deg, #eb3349, #f45c43)',
-        warning: 'linear-gradient(135deg, #f2994a, #f2c94c)',
-        info: 'linear-gradient(135deg, #667eea, #764ba2)'
-      };
-      
-      toast.style.cssText = `
-        background: ${colors[type] || colors.info};
-        color: white;
-        padding: 16px 24px;
-        border-radius: 12px;
-        margin-bottom: 12px;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        animation: slideIn 0.3s;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        min-width: 300px;
-      `;
-      
-      const icons = {
-        success: 'fa-check-circle',
-        error: 'fa-exclamation-circle',
-        warning: 'fa-exclamation-triangle',
-        info: 'fa-info-circle'
-      };
-      
-      toast.innerHTML = `<i class="fas ${icons[type]}"></i> ${message}`;
-      container.appendChild(toast);
-      
-      setTimeout(() => {
-        toast.style.animation = 'slideIn 0.3s reverse';
-        setTimeout(() => toast.remove(), 300);
-      }, 4000);
+      toast.className = 'toast';
+      if (tipo === 'success') toast.classList.add('toast-success');
+      if (tipo === 'error') toast.classList.add('toast-error');
+      toast.innerHTML = `<i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : 'info-circle'}"></i> ${mensagem}`;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
     }
-
-    // ========== SCANNER MANAGER ==========
-    class ScannerManager {
-      constructor() {
-        this.modal = document.getElementById('advanced-scanner');
-        this.video = document.getElementById('scanner-video');
-        this.lastScanSpan = document.getElementById('last-scan-text');
-        this.historyList = document.getElementById('history-list');
-        this.scanIndicator = document.getElementById('scan-indicator');
-        this.cameraSelect = document.getElementById('camera-select');
-        this.manualModal = document.getElementById('manual-entry-modal');
+    
+    // ========== SCANNER ==========
+    async function abrirScanner(callback) {
+      callbackScanner = callback || handleCodigoEscaneado;
+      const modal = document.getElementById('scannerModal');
+      modal.style.display = 'block';
+      
+      try {
+        codeReader = new ZXing.BrowserMultiFormatReader();
+        const devices = await codeReader.listVideoInputDevices();
         
-        this.currentStream = null;
-        this.currentCamera = 'environment';
-        this.torchEnabled = false;
-        this.scanHistory = [];
-        this.callback = null;
-        this.scanning = true;
-        this.codeReader = null;
-        this.availableCameras = [];
+        // Preferir câmera traseira
+        const device = devices.find(d => 
+          d.label.toLowerCase().includes('back') || 
+          d.label.toLowerCase().includes('traseira') ||
+          d.label.toLowerCase().includes('environment')
+        ) || devices[0];
         
-        this.loadHistory();
-        this.initializeZXing();
-        this.setupCameraSelection();
-      }
-
-      async initializeZXing() {
-        try {
-          this.codeReader = new ZXing.BrowserMultiFormatReader();
-          console.log('ZXing inicializado');
-        } catch (error) {
-          console.error('Erro ao inicializar ZXing:', error);
+        if (!device) {
+          mostrarToast('Nenhuma câmera encontrada', 'error');
+          fecharScanner();
+          return;
         }
-      }
-
-      async setupCameraSelection() {
-        try {
-          const devices = await navigator.mediaDevices.enumerateDevices();
-          this.availableCameras = devices.filter(device => device.kind === 'videoinput');
-          
-          this.cameraSelect.innerHTML = this.availableCameras.map((camera, index) => 
-            `<option value="${camera.deviceId}">${camera.label || `Câmera ${index + 1}`}</option>`
-          ).join('');
-          
-          if (this.availableCameras.length > 0) {
-            this.cameraSelect.value = this.availableCameras.find(c => 
-              c.label.toLowerCase().includes('back') || c.label.toLowerCase().includes('traseira')
-            )?.deviceId || this.availableCameras[0].deviceId;
-          }
-          
-          this.cameraSelect.addEventListener('change', () => this.switchToCamera(this.cameraSelect.value));
-        } catch (error) {
-          console.error('Erro ao listar câmeras:', error);
-        }
-      }
-
-      async open(callback) {
-        this.callback = callback;
-        this.modal.style.display = 'block';
-        await this.startScanning();
-      }
-
-      async startScanning() {
-        try {
-          const deviceId = this.cameraSelect.value;
-          const constraints = {
-            video: {
-              deviceId: deviceId ? { exact: deviceId } : undefined,
-              facingMode: this.currentCamera,
-              width: { ideal: 1280 },
-              height: { ideal: 720 }
+        
+        scannerAtivo = true;
+        
+        await codeReader.decodeFromVideoDevice(
+          device.deviceId,
+          'scanner-video',
+          (resultado, erro) => {
+            if (resultado && scannerAtivo) {
+              const codigo = resultado.text;
+              document.getElementById('lastScanText').textContent = `✅ Código detectado: ${codigo}`;
+              
+              // Feedback tátil
+              if (navigator.vibrate) navigator.vibrate(50);
+              
+              // Executar callback
+              if (callbackScanner) {
+                callbackScanner(codigo);
+              }
+              
+              // Fechar scanner
+              setTimeout(() => fecharScanner(), 800);
             }
-          };
-          
-          this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
-          this.video.srcObject = this.currentStream;
-          
-          this.decodeContinuously();
-          
-          this.scanIndicator.classList.add('scanning');
-          this.scanIndicator.innerHTML = '<i class="fas fa-search"></i><span>Escaneando...</span>';
-        } catch (error) {
-          console.error('Erro ao acessar câmera:', error);
-          showToast('Não foi possível acessar a câmera', 'error');
-        }
-      }
-
-      async decodeContinuously() {
-        if (!this.codeReader || !this.scanning) return;
-        
-        try {
-          const result = await this.codeReader.decodeOnceFromVideoDevice(undefined, this.video);
-          if (result && result.text) {
-            this.handleScanResult(result.text);
-          }
-        } catch (error) {
-          // Ignora erros de decodificação
-        }
-        
-        if (this.scanning) {
-          setTimeout(() => this.decodeContinuously(), 100);
-        }
-      }
-
-      handleScanResult(code) {
-        if (!this.scanning) return;
-        
-        this.scanIndicator.classList.remove('scanning');
-        this.scanIndicator.innerHTML = '<i class="fas fa-check-circle"></i><span>Código detectado!</span>';
-        this.scanIndicator.style.color = '#00ff00';
-        
-        if (navigator.vibrate) navigator.vibrate(100);
-        
-        this.addToHistory(code);
-        this.lastScanSpan.textContent = code;
-        
-        if (this.callback) {
-          this.callback(code);
-        }
-        
-        this.showProductInfo(code);
-        
-        setTimeout(() => {
-          this.scanIndicator.classList.add('scanning');
-          this.scanIndicator.innerHTML = '<i class="fas fa-search"></i><span>Escaneando...</span>';
-          this.scanIndicator.style.color = '#00ff00';
-        }, 2000);
-        
-        showToast(`Código detectado: ${code}`, 'success');
-      }
-
-      showProductInfo(code) {
-        const produto = produtos.find(p => p.codigoBarras === code);
-        if (produto) {
-          showToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} (${produto.quantidade} em estoque)`, 'info');
-        }
-      }
-
-      addToHistory(code) {
-        const scanEntry = {
-          code,
-          timestamp: new Date().toISOString(),
-          productFound: produtos.some(p => p.codigoBarras === code)
-        };
-        
-        this.scanHistory.unshift(scanEntry);
-        if (this.scanHistory.length > 50) this.scanHistory.pop();
-        
-        this.saveHistory();
-        this.updateHistoryDisplay();
-      }
-
-      updateHistoryDisplay() {
-        this.historyList.innerHTML = this.scanHistory.map(entry => `
-          <div class="history-item" onclick="scannerManager.useHistoryCode('${entry.code}')">
-            <span>
-              <i class="fas ${entry.productFound ? 'fa-check-circle' : 'fa-question-circle'}" 
-                 style="color: ${entry.productFound ? '#48bb78' : '#a0aec0'};"></i>
-              ${entry.code}
-            </span>
-            <span style="color: #a0aec0; font-size: 0.9rem;">
-              ${new Date(entry.timestamp).toLocaleTimeString()}
-            </span>
-          </div>
-        `).join('');
-      }
-
-      useHistoryCode(code) {
-        this.handleScanResult(code);
-      }
-
-      async switchCamera() {
-        this.currentCamera = this.currentCamera === 'environment' ? 'user' : 'environment';
-        this.stopStream();
-        await this.startScanning();
-      }
-
-      async switchToCamera(deviceId) {
-        this.stopStream();
-        await this.startScanning();
-      }
-
-      async toggleTorch() {
-        try {
-          const track = this.currentStream?.getVideoTracks()[0];
-          if (track && track.getCapabilities().torch) {
-            this.torchEnabled = !this.torchEnabled;
-            await track.applyConstraints({
-              advanced: [{ torch: this.torchEnabled }]
-            });
             
-            const torchIcon = document.getElementById('torch-icon');
-            torchIcon.style.color = this.torchEnabled ? '#ffdd00' : 'white';
-            showToast(this.torchEnabled ? 'Lanterna ligada' : 'Lanterna desligada', 'info');
-          } else {
-            showToast('Lanterna não disponível nesta câmera', 'warning');
+            if (erro && !(erro instanceof ZXing.NotFoundException)) {
+              console.warn('Erro no scan:', erro);
+            }
           }
-        } catch (error) {
-          console.error('Erro ao controlar lanterna:', error);
-        }
-      }
-
-      stopStream() {
-        if (this.currentStream) {
-          this.currentStream.getTracks().forEach(track => track.stop());
-          this.currentStream = null;
-        }
-      }
-
-      useManualEntry() {
-        this.scanning = false;
-        this.manualModal.style.display = 'flex';
-      }
-
-      confirmManualEntry() {
-        const input = document.getElementById('manual-barcode-input');
-        const code = input.value.trim();
+        );
         
-        if (code) {
-          this.handleScanResult(code);
-          this.closeManualEntry();
-        }
-      }
-
-      closeManualEntry() {
-        this.manualModal.style.display = 'none';
-        document.getElementById('manual-barcode-input').value = '';
-        this.scanning = true;
-      }
-
-      clearHistory() {
-        if (confirm('Limpar histórico de scans?')) {
-          this.scanHistory = [];
-          this.saveHistory();
-          this.updateHistoryDisplay();
-          showToast('Histórico limpo', 'info');
-        }
-      }
-
-      exportHistory() {
-        const data = JSON.stringify(this.scanHistory, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `scanner-history-${new Date().toISOString().split('T')[0]}.json`;
-        a.click();
-        showToast('Histórico exportado', 'success');
-      }
-
-      saveHistory() {
-        localStorage.setItem('scanner_history', JSON.stringify(this.scanHistory));
-      }
-
-      loadHistory() {
-        const stored = localStorage.getItem('scanner_history');
-        if (stored) {
-          this.scanHistory = JSON.parse(stored);
-        }
-      }
-
-      close() {
-        this.scanning = false;
-        this.stopStream();
-        this.modal.style.display = 'none';
-        this.callback = null;
+        document.getElementById('lastScanText').textContent = '🔍 Escaneando...';
+      } catch (error) {
+        console.error('Erro no scanner:', error);
+        mostrarToast('Erro ao acessar câmera', 'error');
+        fecharScanner();
       }
     }
-
-    // Inicializar scanner
-    const scannerManager = new ScannerManager();
-
-    // ========== COMPONENTES ==========
-    function renderHeader() {
-      const alertas = produtos.filter(p => p.quantidade <= p.estoqueMinimo).length;
-      return `
-        <header style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(0,0,0,0.05); padding: 16px 24px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; max-width: 1400px; margin: 0 auto; flex-wrap: wrap; gap: 16px;">
-            <div style="display: flex; align-items: center; gap: 16px;">
-              <i class="fas fa-store-alt" style="font-size: 32px; background: linear-gradient(135deg, #667eea, #764ba2); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
-              <div>
-                <h1 style="font-weight: 700; font-size: 1.8rem; color: #1e293b;">${configuracoes.nomeLoja}</h1>
-                <p style="color: #64748b; font-size: 0.9rem;">Gestão Inteligente de Conveniência</p>
-              </div>
-              ${alertas > 0 ? `<span class="alert-badge"><i class="fas fa-exclamation-triangle"></i> ${alertas} produtos com estoque baixo</span>` : ''}
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-primary" onclick="scannerManager.open(handleScannedCode)">
-                <i class="fas fa-barcode"></i> Scanner
-              </button>
-            </div>
-          </div>
-        </header>
-      `;
+    
+    function fecharScanner() {
+      scannerAtivo = false;
+      if (codeReader) {
+        codeReader.reset();
+        codeReader = null;
+      }
+      document.getElementById('scannerModal').style.display = 'none';
+      const video = document.getElementById('scanner-video');
+      if (video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
     }
-
-    function handleScannedCode(code) {
+    
+    function usarCodigoManual() {
+      const input = document.getElementById('manualBarcode');
+      const codigo = input.value.trim();
+      if (codigo) {
+        if (callbackScanner) callbackScanner(codigo);
+        fecharScanner();
+        input.value = '';
+      }
+    }
+    
+    // ========== HANDLER DO SCANNER ==========
+    function handleCodigoEscaneado(codigo) {
+      console.log('Código escaneado:', codigo);
+      
       if (paginaAtual === 'vendas') {
-        const buscaInput = document.getElementById('busca-produto-venda');
-        if (buscaInput) {
-          buscaInput.value = code;
-          buscarProduto(code);
+        // Adicionar ao carrinho
+        const produto = produtos.find(p => p.codigo === codigo);
+        if (produto) {
+          if (produto.quantidade > 0) {
+            adicionarAoCarrinho(produto.id);
+            mostrarToast(`${produto.nome} adicionado`, 'success');
+          } else {
+            mostrarToast('Produto sem estoque!', 'error');
+          }
+        } else {
+          mostrarToast(`Produto não encontrado: ${codigo}`, 'error');
         }
       } else if (paginaAtual === 'cadastro') {
-        const codigoInput = document.getElementById('cad-codigo');
-        if (codigoInput) {
-          codigoInput.value = code;
+        // Preencher campo de código
+        const input = document.getElementById('codigoInput');
+        if (input) {
+          input.value = codigo;
+          mostrarToast(`Código preenchido: ${codigo}`, 'success');
         }
       } else {
-        // Buscar produto e mostrar info
-        const produto = produtos.find(p => p.codigoBarras === code);
+        // Mostrar info do produto
+        const produto = produtos.find(p => p.codigo === codigo);
         if (produto) {
-          showToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} | Estoque: ${produto.quantidade}`, 'info');
+          mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} | Estoque: ${produto.quantidade}`, 'info');
         } else {
-          showToast(`Código ${code} não cadastrado`, 'warning');
+          mostrarToast(`Código não cadastrado: ${codigo}`, 'error');
         }
       }
     }
-
-    function renderFooter() {
-      const hoje = new Date();
-      const vendasHoje = vendas.filter(v => new Date(v.data).toDateString() === hoje.toDateString());
-      const totalHoje = vendasHoje.reduce((acc, v) => acc + v.total, 0);
+    
+    // ========== NAVEGAÇÃO ==========
+    function mudarPagina(pagina) {
+      paginaAtual = pagina;
       
-      return `
-        <footer style="background: rgba(255,255,255,0.9); backdrop-filter: blur(10px); border-top: 1px solid rgba(0,0,0,0.05); padding: 20px 24px; margin-top: 40px;">
-          <div style="max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
-            <div>
-              <h4 style="color: #1e293b; margin-bottom: 8px;"><i class="fas fa-chart-bar"></i> Resumo do Dia</h4>
-              <p style="color: #64748b;">Vendas hoje: ${vendasHoje.length} | Total: R$ ${totalHoje.toFixed(2)}</p>
-            </div>
-            <div>
-              <h4 style="color: #1e293b; margin-bottom: 8px;"><i class="fas fa-boxes"></i> Estoque</h4>
-              <p style="color: #64748b;">${produtos.length} produtos | ${produtos.reduce((acc, p) => acc + p.quantidade, 0)} itens</p>
-            </div>
-            <div style="text-align: right;">
-              <p style="color: #94a3b8;">© 2026 Conveniência Pro · v2.0</p>
-              <p style="color: #94a3b8; font-size: 0.85rem;">Atualizado em ${new Date().toLocaleString()}</p>
-            </div>
-          </div>
-        </footer>
-      `;
-    }
-
-    // ========== RENDERIZAÇÃO DE PÁGINAS ==========
-    function renderPage(page) {
-      paginaAtual = page;
-      const mainContent = document.getElementById('main-content');
-      
-      // Renderizar tabs de navegação
-      const tabs = `
-        <div class="nav-tabs">
-          <button class="nav-tab ${page === 'dashboard' ? 'active' : ''}" onclick="renderPage('dashboard')">
-            <i class="fas fa-chart-pie"></i> Dashboard
-          </button>
-          <button class="nav-tab ${page === 'estoque' ? 'active' : ''}" onclick="renderPage('estoque')">
-            <i class="fas fa-boxes"></i> Estoque
-          </button>
-          <button class="nav-tab ${page === 'cadastro' ? 'active' : ''}" onclick="renderPage('cadastro')">
-            <i class="fas fa-plus-circle"></i> Cadastrar
-          </button>
-          <button class="nav-tab ${page === 'vendas' ? 'active' : ''}" onclick="renderPage('vendas')">
-            <i class="fas fa-shopping-cart"></i> Vendas
-          </button>
-          <button class="nav-tab ${page === 'clientes' ? 'active' : ''}" onclick="renderPage('clientes')">
-            <i class="fas fa-users"></i> Clientes
-          </button>
-          <button class="nav-tab ${page === 'relatorios' ? 'active' : ''}" onclick="renderPage('relatorios')">
-            <i class="fas fa-file-alt"></i> Relatórios
-          </button>
-        </div>
-      `;
-      
-      let content = '';
-      
-      switch(page) {
-        case 'dashboard':
-          content = renderDashboard();
-          break;
-        case 'estoque':
-          content = renderEstoque();
-          break;
-        case 'cadastro':
-          content = renderCadastro();
-          break;
-        case 'vendas':
-          content = renderVendas();
-          break;
-        case 'clientes':
-          content = renderClientes();
-          break;
-        case 'relatorios':
-          content = renderRelatorios();
-          break;
-      }
-      
-      mainContent.innerHTML = tabs + content;
-      
-      // Ativar eventos específicos da página
-      if (page === 'dashboard') setTimeout(initDashboardCharts, 100);
-      if (page === 'estoque') attachEstoqueEvents();
-      if (page === 'cadastro') attachCadastroEvents();
-      if (page === 'vendas') attachVendasEvents();
-      if (page === 'clientes') attachClientesEvents();
-    }
-
-    // ========== DASHBOARD ==========
-    function renderDashboard() {
-      const totalProdutos = produtos.length;
-      const valorEstoque = produtos.reduce((acc, p) => acc + (p.preco * p.quantidade), 0);
-      const produtosBaixoEstoque = produtos.filter(p => p.quantidade <= p.estoqueMinimo).length;
-      const vendasMes = vendas.filter(v => new Date(v.data).getMonth() === new Date().getMonth());
-      const faturamentoMes = vendasMes.reduce((acc, v) => acc + v.total, 0);
-      
-      return `
-        <div>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-label">Total em Estoque</div>
-              <div class="stat-value">R$ ${valorEstoque.toFixed(2)}</div>
-              <div class="stat-trend"><i class="fas fa-box"></i> ${totalProdutos} produtos</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Faturamento do Mês</div>
-              <div class="stat-value">R$ ${faturamentoMes.toFixed(2)}</div>
-              <div class="stat-trend"><i class="fas fa-shopping-cart"></i> ${vendasMes.length} vendas</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Alertas de Estoque</div>
-              <div class="stat-value" style="color: ${produtosBaixoEstoque > 0 ? '#dc2626' : '#10b981'};">${produtosBaixoEstoque}</div>
-              <div class="stat-trend"><i class="fas fa-exclamation-triangle"></i> Abaixo do mínimo</div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-label">Ticket Médio</div>
-              <div class="stat-value">R$ ${vendasMes.length ? (faturamentoMes / vendasMes.length).toFixed(2) : '0.00'}</div>
-              <div class="stat-trend"><i class="fas fa-receipt"></i> Por venda</div>
-            </div>
-          </div>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
-            <div class="card">
-              <h3><i class="fas fa-chart-line"></i> Vendas dos Últimos 7 Dias</h3>
-              <div class="chart-container">
-                <canvas id="vendasChart"></canvas>
-              </div>
-            </div>
-            <div class="card">
-              <h3><i class="fas fa-chart-pie"></i> Distribuição por Categoria</h3>
-              <div class="chart-container">
-                <canvas id="categoriasChart"></canvas>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <h3><i class="fas fa-exclamation-triangle"></i> Produtos com Estoque Baixo</h3>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr><th>Produto</th><th>Quantidade</th><th>Mínimo</th><th>Status</th><th>Ação</th></tr>
-                </thead>
-                <tbody>
-                  ${produtos.filter(p => p.quantidade <= p.estoqueMinimo).map(p => `
-                    <tr>
-                      <td>${p.nome}</td>
-                      <td>${p.quantidade}</td>
-                      <td>${p.estoqueMinimo}</td>
-                      <td><span class="alert-badge">Crítico</span></td>
-                      <td><button class="btn btn-warning" onclick="reporEstoque('${p.id}')"><i class="fas fa-plus"></i> Repor</button></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    function initDashboardCharts() {
-      // Dados para gráfico de vendas
-      const ultimos7Dias = [];
-      const vendasPorDia = [];
-      
-      for (let i = 6; i >= 0; i--) {
-        const data = new Date();
-        data.setDate(data.getDate() - i);
-        const dataStr = data.toISOString().split('T')[0];
-        const vendasDia = vendas.filter(v => v.data.startsWith(dataStr));
-        const totalDia = vendasDia.reduce((acc, v) => acc + v.total, 0);
-        
-        ultimos7Dias.push(data.toLocaleDateString('pt-BR', { weekday: 'short' }));
-        vendasPorDia.push(totalDia);
-      }
-      
-      const ctx1 = document.getElementById('vendasChart')?.getContext('2d');
-      if (ctx1) {
-        new Chart(ctx1, {
-          type: 'line',
-          data: {
-            labels: ultimos7Dias,
-            datasets: [{
-              label: 'Vendas (R$)',
-              data: vendasPorDia,
-              borderColor: '#667eea',
-              backgroundColor: 'rgba(102, 126, 234, 0.1)',
-              tension: 0.4,
-              fill: true
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false
-          }
-        });
-      }
-      
-      // Dados para gráfico de categorias
-      const categoriasData = {};
-      produtos.forEach(p => {
-        categoriasData[p.categoria] = (categoriasData[p.categoria] || 0) + p.quantidade;
+      // Atualizar botões
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.page === pagina) btn.classList.add('active');
       });
       
-      const ctx2 = document.getElementById('categoriasChart')?.getContext('2d');
-      if (ctx2) {
-        new Chart(ctx2, {
-          type: 'doughnut',
-          data: {
-            labels: Object.keys(categoriasData),
-            datasets: [{
-              data: Object.values(categoriasData),
-              backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#f6d365']
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false
-          }
-        });
-      }
+      // Renderizar página
+      if (pagina === 'estoque') renderizarEstoque();
+      else if (pagina === 'cadastro') renderizarCadastro();
+      else if (pagina === 'vendas') renderizarVendas();
     }
-
-    // ========== ESTOQUE ==========
-    function renderEstoque() {
-      return `
+    
+    // ========== RENDERIZAR ESTOQUE ==========
+    function renderizarEstoque() {
+      const produtosBaixo = produtos.filter(p => p.quantidade <= p.estoqueMinimo);
+      
+      document.getElementById('content').innerHTML = `
         <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h2><i class="fas fa-boxes"></i> Gestão de Estoque</h2>
-            <div style="display: flex; gap: 8px;">
-              <button class="btn btn-success" onclick="abrirModalProduto()">
-                <i class="fas fa-plus"></i> Novo Produto
+          <div class="flex-between mb-4">
+            <h2><i class="fas fa-boxes"></i> Controle de Estoque</h2>
+            <div class="flex">
+              <input type="text" id="buscaEstoque" placeholder="Buscar produto..." style="width: 250px;">
+              <button class="btn btn-primary" onclick="abrirModalLote()">
+                <i class="fas fa-upload"></i> Importar Lote
               </button>
-              <input type="text" id="busca-estoque" placeholder="Buscar produto..." style="width: 250px;">
             </div>
           </div>
           
+          ${produtosBaixo.length > 0 ? `
+            <div style="background: #fef3c7; border: 1px solid #fbbf24; border-radius: 6px; padding: 12px; margin-bottom: 16px;">
+              <i class="fas fa-exclamation-triangle" style="color: #d97706;"></i>
+              <strong>${produtosBaixo.length} produtos com estoque baixo</strong>
+            </div>
+          ` : ''}
+          
           <div class="table-wrapper">
-            <table id="estoque-table">
+            <table id="tabelaEstoque">
               <thead>
                 <tr>
                   <th>Produto</th>
                   <th>Código</th>
-                  <th>Categoria</th>
                   <th>Preço</th>
-                  <th>Qtd</th>
+                  <th>Estoque</th>
                   <th>Mínimo</th>
                   <th>Status</th>
                   <th>Ações</th>
@@ -1279,20 +697,24 @@
                 ${produtos.map(p => `
                   <tr>
                     <td>${p.nome}</td>
-                    <td><span class="badge">${p.codigoBarras}</span></td>
-                    <td>${p.categoria}</td>
+                    <td><code>${p.codigo}</code></td>
                     <td>R$ ${p.preco.toFixed(2)}</td>
                     <td>${p.quantidade}</td>
-                    <td>${p.estoqueMinimo}</td>
+                    <td>${p.estoqueMinimo || 10}</td>
                     <td>
-                      ${p.quantidade <= p.estoqueMinimo ? 
-                        '<span class="alert-badge">Baixo</span>' : 
-                        '<span class="badge" style="background:#d1fae5; color:#065f46;">Normal</span>'}
+                      ${p.quantidade <= (p.estoqueMinimo || 10) ? 
+                        '<span class="badge badge-danger">Baixo</span>' : 
+                        '<span class="badge badge-success">Normal</span>'}
                     </td>
                     <td>
-                      <button class="btn-outline" onclick="editarProduto('${p.id}')" style="padding:4px 8px;"><i class="fas fa-edit"></i></button>
-                      <button class="btn-outline" onclick="reporEstoque('${p.id}')" style="padding:4px 8px;"><i class="fas fa-plus"></i></button>
-                      <button class="btn-outline" onclick="excluirProduto('${p.id}')" style="padding:4px 8px; color:#dc2626;"><i class="fas fa-trash"></i></button>
+                      <div class="flex">
+                        <button class="btn btn-sm" onclick="ajustarEstoque('${p.id}')" title="Ajustar">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm" onclick="excluirProduto('${p.id}')" title="Excluir">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 `).join('')}
@@ -1301,513 +723,384 @@
           </div>
         </div>
       `;
-    }
-
-    function attachEstoqueEvents() {
-      const buscaInput = document.getElementById('busca-estoque');
-      if (buscaInput) {
-        buscaInput.addEventListener('input', (e) => {
-          const termo = e.target.value.toLowerCase();
-          const tbody = document.querySelector('#estoque-table tbody');
-          const filtrados = produtos.filter(p => 
-            p.nome.toLowerCase().includes(termo) || 
-            p.codigoBarras.includes(termo)
-          );
-          
-          tbody.innerHTML = filtrados.map(p => `
-            <tr>
-              <td>${p.nome}</td>
-              <td><span class="badge">${p.codigoBarras}</span></td>
-              <td>${p.categoria}</td>
-              <td>R$ ${p.preco.toFixed(2)}</td>
-              <td>${p.quantidade}</td>
-              <td>${p.estoqueMinimo}</td>
-              <td>
-                ${p.quantidade <= p.estoqueMinimo ? 
-                  '<span class="alert-badge">Baixo</span>' : 
-                  '<span class="badge" style="background:#d1fae5; color:#065f46;">Normal</span>'}
-              </td>
-              <td>
-                <button class="btn-outline" onclick="editarProduto('${p.id}')" style="padding:4px 8px;"><i class="fas fa-edit"></i></button>
-                <button class="btn-outline" onclick="reporEstoque('${p.id}')" style="padding:4px 8px;"><i class="fas fa-plus"></i></button>
-                <button class="btn-outline" onclick="excluirProduto('${p.id}')" style="padding:4px 8px; color:#dc2626;"><i class="fas fa-trash"></i></button>
-              </td>
-            </tr>
-          `).join('');
-        });
-      }
-    }
-
-    // ========== CADASTRO ==========
-    function renderCadastro() {
-      return `
-        <div class="card" style="max-width: 700px; margin: 0 auto;">
-          <h2 style="margin-bottom: 24px;"><i class="fas fa-box-open"></i> Cadastrar Novo Produto</h2>
-          <form id="form-cadastro">
-            <div style="display: grid; gap: 16px;">
-              <input type="text" id="cad-nome" placeholder="Nome do produto *" required>
-              
-              <div style="display: flex; gap: 10px;">
-                <input type="text" id="cad-codigo" placeholder="Código de barras" style="flex: 2;">
-                <button type="button" class="btn btn-outline" onclick="scannerManager.open((code) => { document.getElementById('cad-codigo').value = code; })">
-                  <i class="fas fa-barcode"></i> Ler
-                </button>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="number" id="cad-preco" placeholder="Preço R$" step="0.01" required>
-                <input type="number" id="cad-quantidade" placeholder="Quantidade" required>
-              </div>
-              
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <select id="cad-categoria" required>
-                  <option value="">Selecione a categoria</option>
-                  ${categorias.map(c => `<option value="${c}">${c}</option>`).join('')}
-                </select>
-                <input type="number" id="cad-estoque-minimo" placeholder="Estoque mínimo" value="10">
-              </div>
-              
-              <input type="text" id="cad-fornecedor" placeholder="Fornecedor">
-              
-              <button type="submit" class="btn btn-primary" style="justify-content: center;">
-                <i class="fas fa-save"></i> Salvar Produto
-              </button>
-            </div>
-          </form>
-        </div>
-      `;
-    }
-
-    function attachCadastroEvents() {
-      const form = document.getElementById('form-cadastro');
-      form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        
-        const nome = document.getElementById('cad-nome').value.trim();
-        const codigo = document.getElementById('cad-codigo').value.trim() || `SEM_CODIGO_${Date.now()}`;
-        const preco = parseFloat(document.getElementById('cad-preco').value);
-        const quantidade = parseInt(document.getElementById('cad-quantidade').value);
-        const categoria = document.getElementById('cad-categoria').value;
-        const estoqueMinimo = parseInt(document.getElementById('cad-estoque-minimo').value);
-        const fornecedor = document.getElementById('cad-fornecedor').value.trim();
-        
-        if (!nome || !categoria || isNaN(preco) || isNaN(quantidade)) {
-          showToast('Preencha todos os campos obrigatórios', 'error');
-          return;
-        }
-        
-        const novoProduto = {
-          id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-          nome,
-          codigoBarras: codigo,
-          preco,
-          quantidade,
-          categoria,
-          estoqueMinimo,
-          fornecedor: fornecedor || 'Não informado'
-        };
-        
-        produtos.push(novoProduto);
-        salvarDados();
-        showToast('Produto cadastrado com sucesso!', 'success');
-        form.reset();
-        renderPage('estoque');
-      });
-    }
-
-    // ========== VENDAS ==========
-    function renderVendas() {
-      return `
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
-          <div class="card">
-            <h3><i class="fas fa-search"></i> Buscar Produto</h3>
-            <div style="display: flex; gap: 10px; margin: 16px 0;">
-              <input type="text" id="busca-produto-venda" placeholder="Nome ou código de barras" style="flex: 1;">
-              <button class="btn btn-outline" onclick="scannerManager.open((code) => { document.getElementById('busca-produto-venda').value = code; buscarProduto(code); })">
-                <i class="fas fa-barcode"></i>
-              </button>
-            </div>
-            <div id="resultado-busca-venda" style="max-height: 400px; overflow-y: auto;"></div>
-          </div>
-          
-          <div class="card">
-            <h3><i class="fas fa-shopping-basket"></i> Carrinho</h3>
-            <div id="carrinho-container" style="max-height: 400px; overflow-y: auto;"></div>
-            <hr style="margin: 16px 0;">
-            
-            <div style="margin-bottom: 16px;">
-              <label>Cliente (opcional):</label>
-              <select id="cliente-venda" style="width: 100%; margin-top: 8px;">
-                <option value="">Cliente Balcão</option>
-                ${clientes.map(c => `<option value="${c.id}">${c.nome}</option>`).join('')}
-              </select>
-            </div>
-            
-            <div style="font-size: 1.4rem; font-weight: 700; margin-bottom: 16px;">
-              Total: R$ <span id="venda-total">0.00</span>
-            </div>
-            
-            <button class="btn btn-success" style="width: 100%;" id="finalizar-venda">
-              <i class="fas fa-check-circle"></i> Finalizar Venda
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function attachVendasEvents() {
-      const buscaInput = document.getElementById('busca-produto-venda');
-      const resultadoDiv = document.getElementById('resultado-busca-venda');
       
-      window.buscarProduto = function(termo) {
-        if (!termo) {
-          resultadoDiv.innerHTML = '<p style="color: #94a3b8; text-align: center;">Digite um nome ou código para buscar</p>';
-          return;
-        }
-        
-        const resultados = produtos.filter(p => 
-          p.nome.toLowerCase().includes(termo.toLowerCase()) || 
-          p.codigoBarras.includes(termo)
+      // Busca
+      document.getElementById('buscaEstoque').addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase();
+        const tbody = document.querySelector('#tabelaEstoque tbody');
+        const filtrados = produtos.filter(p => 
+          p.nome.toLowerCase().includes(termo) || 
+          p.codigo.includes(termo)
         );
         
-        if (resultados.length === 0) {
-          resultadoDiv.innerHTML = '<p style="color: #94a3b8; text-align: center;">Nenhum produto encontrado</p>';
-          return;
-        }
-        
-        resultadoDiv.innerHTML = resultados.map(p => `
-          <div style="padding: 12px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-weight: 600;">${p.nome}</div>
-              <div style="color: #64748b; font-size: 0.9rem;">R$ ${p.preco.toFixed(2)} | Estoque: ${p.quantidade}</div>
-            </div>
-            <button class="btn btn-primary" onclick="adicionarAoCarrinho('${p.id}')" style="padding: 6px 12px;" ${p.quantidade === 0 ? 'disabled' : ''}>
-              <i class="fas fa-plus"></i> Adicionar
-            </button>
-          </div>
-        `).join('');
-      };
-      
-      window.adicionarAoCarrinho = function(produtoId) {
-        const produto = produtos.find(p => p.id === produtoId);
-        if (!produto || produto.quantidade === 0) {
-          showToast('Produto sem estoque', 'error');
-          return;
-        }
-        
-        const itemExistente = carrinhoVenda.find(i => i.id === produtoId);
-        if (itemExistente) {
-          if (itemExistente.quantidade < produto.quantidade) {
-            itemExistente.quantidade++;
-          } else {
-            showToast('Quantidade máxima atingida', 'warning');
-            return;
-          }
-        } else {
-          carrinhoVenda.push({
-            id: produto.id,
-            nome: produto.nome,
-            preco: produto.preco,
-            quantidade: 1
-          });
-        }
-        
-        atualizarCarrinhoUI();
-        showToast(`${produto.nome} adicionado ao carrinho`, 'success');
-      };
-      
-      window.atualizarCarrinhoUI = function() {
-        const container = document.getElementById('carrinho-container');
-        const totalSpan = document.getElementById('venda-total');
-        
-        if (carrinhoVenda.length === 0) {
-          container.innerHTML = '<p style="color: #94a3b8; text-align: center;">Carrinho vazio</p>';
-          totalSpan.textContent = '0.00';
-          return;
-        }
-        
-        let total = 0;
-        container.innerHTML = carrinhoVenda.map((item, index) => {
-          const subtotal = item.preco * item.quantidade;
-          total += subtotal;
-          
-          return `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
-              <div style="flex: 1;">
-                <div style="font-weight: 500;">${item.nome}</div>
-                <div style="color: #64748b; font-size: 0.85rem;">
-                  ${item.quantidade}x R$ ${item.preco.toFixed(2)}
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-weight: 600;">R$ ${subtotal.toFixed(2)}</span>
-                <button class="btn-outline" onclick="removerDoCarrinho(${index})" style="padding: 2px 6px;">
+        tbody.innerHTML = filtrados.map(p => `
+          <tr>
+            <td>${p.nome}</td>
+            <td><code>${p.codigo}</code></td>
+            <td>R$ ${p.preco.toFixed(2)}</td>
+            <td>${p.quantidade}</td>
+            <td>${p.estoqueMinimo || 10}</td>
+            <td>
+              ${p.quantidade <= (p.estoqueMinimo || 10) ? 
+                '<span class="badge badge-danger">Baixo</span>' : 
+                '<span class="badge badge-success">Normal</span>'}
+            </td>
+            <td>
+              <div class="flex">
+                <button class="btn btn-sm" onclick="ajustarEstoque('${p.id}')">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-sm" onclick="excluirProduto('${p.id}')">
                   <i class="fas fa-trash"></i>
                 </button>
               </div>
-            </div>
-          `;
-        }).join('');
-        
-        totalSpan.textContent = total.toFixed(2);
-      };
-      
-      window.removerDoCarrinho = function(index) {
-        carrinhoVenda.splice(index, 1);
-        atualizarCarrinhoUI();
-      };
-      
-      document.getElementById('finalizar-venda').addEventListener('click', () => {
-        if (carrinhoVenda.length === 0) {
-          showToast('Carrinho vazio', 'warning');
-          return;
-        }
-        
-        // Verificar estoque
-        for (let item of carrinhoVenda) {
-          const produto = produtos.find(p => p.id === item.id);
-          if (!produto || produto.quantidade < item.quantidade) {
-            showToast(`Estoque insuficiente para ${item.nome}`, 'error');
-            return;
-          }
-        }
-        
-        // Atualizar estoque
-        carrinhoVenda.forEach(item => {
-          const produto = produtos.find(p => p.id === item.id);
-          produto.quantidade -= item.quantidade;
-        });
-        
-        // Registrar venda
-        const clienteId = document.getElementById('cliente-venda').value;
-        const cliente = clienteId ? clientes.find(c => c.id === clienteId) : null;
-        const total = carrinhoVenda.reduce((acc, item) => acc + (item.preco * item.quantidade), 0);
-        
-        const venda = {
-          id: 'v' + Date.now(),
-          data: new Date().toISOString(),
-          itens: [...carrinhoVenda],
-          total,
-          cliente: cliente ? cliente.nome : 'Cliente Balcão'
-        };
-        
-        vendas.push(venda);
-        
-        // Atualizar total de compras do cliente
-        if (cliente) {
-          cliente.totalCompras = (cliente.totalCompras || 0) + total;
-        }
-        
-        salvarDados();
-        carrinhoVenda = [];
-        atualizarCarrinhoUI();
-        
-        showToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
-        renderPage('vendas');
+            </td>
+          </tr>
+        `).join('');
       });
-      
-      buscaInput.addEventListener('input', (e) => buscarProduto(e.target.value));
-      atualizarCarrinhoUI();
     }
-
-    // ========== CLIENTES ==========
-    function renderClientes() {
-      return `
-        <div class="card">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-            <h2><i class="fas fa-users"></i> Gestão de Clientes</h2>
-            <button class="btn btn-success" onclick="abrirModalCliente()">
-              <i class="fas fa-plus"></i> Novo Cliente
+    
+    // ========== RENDERIZAR CADASTRO ==========
+    function renderizarCadastro() {
+      document.getElementById('content').innerHTML = `
+        <div class="grid-2">
+          <div class="card">
+            <h2 class="mb-4"><i class="fas fa-plus-circle"></i> Cadastrar Produto</h2>
+            <form onsubmit="cadastrarProduto(event)">
+              <div class="mb-4">
+                <label>Nome do Produto *</label>
+                <input type="text" id="nomeInput" class="w-full" required>
+              </div>
+              
+              <div class="mb-4">
+                <label>Código de Barras *</label>
+                <div class="flex">
+                  <input type="text" id="codigoInput" class="w-full" required>
+                  <button type="button" class="btn" onclick="abrirScanner((codigo) => document.getElementById('codigoInput').value = codigo)">
+                    <i class="fas fa-barcode"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <div class="grid-2 mb-4">
+                <div>
+                  <label>Preço (R$) *</label>
+                  <input type="number" id="precoInput" step="0.01" class="w-full" required>
+                </div>
+                <div>
+                  <label>Quantidade *</label>
+                  <input type="number" id="qtdInput" class="w-full" required>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <label>Estoque Mínimo</label>
+                <input type="number" id="minInput" value="10" class="w-full">
+              </div>
+              
+              <button type="submit" class="btn btn-primary w-full">
+                <i class="fas fa-save"></i> Cadastrar Produto
+              </button>
+            </form>
+          </div>
+          
+          <div class="card">
+            <h3 class="mb-4"><i class="fas fa-info-circle"></i> Dicas</h3>
+            <ul style="list-style: none; padding: 0;">
+              <li class="mb-4">✓ Use o scanner para preencher o código automaticamente</li>
+              <li class="mb-4">✓ Para múltiplos produtos, use "Importar Lote"</li>
+              <li class="mb-4">✓ Formato do lote: Nome;Código;Preço;Quantidade</li>
+              <li class="mb-4">✓ Exemplo: Água;7891234567890;2.50;50</li>
+            </ul>
+            <button class="btn btn-success w-full" onclick="abrirModalLote()">
+              <i class="fas fa-upload"></i> Importar Múltiplos Produtos
             </button>
           </div>
-          
-          <div class="table-wrapper">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Telefone</th>
-                  <th>Email</th>
-                  <th>Total em Compras</th>
-                  <th>Última Compra</th>
-                  <th>Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${clientes.map(c => {
-                  const ultimaCompra = vendas.filter(v => v.cliente === c.nome).sort((a, b) => 
-                    new Date(b.data) - new Date(a.data)
-                  )[0];
-                  
-                  return `
-                    <tr>
-                      <td>${c.nome}</td>
-                      <td>${c.telefone}</td>
-                      <td>${c.email}</td>
-                      <td>R$ ${(c.totalCompras || 0).toFixed(2)}</td>
-                      <td>${ultimaCompra ? new Date(ultimaCompra.data).toLocaleDateString() : 'Nunca'}</td>
-                      <td>
-                        <button class="btn-outline" onclick="editarCliente('${c.id}')" style="padding:4px 8px;">
-                          <i class="fas fa-edit"></i>
-                        </button>
-                      </td>
-                    </tr>
-                  `;
-                }).join('')}
-              </tbody>
-            </table>
-          </div>
         </div>
       `;
     }
-
-    function attachClientesEvents() {
-      // Implementar eventos de clientes se necessário
-    }
-
-    // ========== RELATÓRIOS ==========
-    function renderRelatorios() {
-      const vendasPorCategoria = {};
-      vendas.forEach(v => {
-        v.itens.forEach(item => {
-          const produto = produtos.find(p => p.id === item.id);
-          if (produto) {
-            vendasPorCategoria[produto.categoria] = (vendasPorCategoria[produto.categoria] || 0) + (item.preco * item.quantidade);
-          }
-        });
-      });
+    
+    function cadastrarProduto(e) {
+      e.preventDefault();
       
-      const produtosMaisVendidos = {};
-      vendas.forEach(v => {
-        v.itens.forEach(item => {
-          produtosMaisVendidos[item.nome] = (produtosMaisVendidos[item.nome] || 0) + item.quantidade;
-        });
-      });
+      const nome = document.getElementById('nomeInput').value.trim();
+      const codigo = document.getElementById('codigoInput').value.trim();
+      const preco = parseFloat(document.getElementById('precoInput').value);
+      const quantidade = parseInt(document.getElementById('qtdInput').value);
+      const minimo = parseInt(document.getElementById('minInput').value);
       
-      const topProdutos = Object.entries(produtosMaisVendidos)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5);
-      
-      return `
-        <div>
-          <div class="card">
-            <h3><i class="fas fa-chart-bar"></i> Vendas por Categoria</h3>
-            <div class="chart-container">
-              <canvas id="vendasCategoriaChart"></canvas>
-            </div>
-          </div>
-          
-          <div class="card">
-            <h3><i class="fas fa-trophy"></i> Produtos Mais Vendidos</h3>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr><th>#</th><th>Produto</th><th>Quantidade Vendida</th></tr>
-                </thead>
-                <tbody>
-                  ${topProdutos.map(([nome, qtd], index) => `
-                    <tr>
-                      <td>${index + 1}º</td>
-                      <td>${nome}</td>
-                      <td>${qtd} unidades</td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          </div>
-          
-          <div class="card">
-            <h3><i class="fas fa-calendar"></i> Resumo Financeiro</h3>
-            <div style="display: grid; gap: 16px;">
-              <div>
-                <strong>Faturamento Total:</strong> R$ ${vendas.reduce((acc, v) => acc + v.total, 0).toFixed(2)}
-              </div>
-              <div>
-                <strong>Total de Vendas:</strong> ${vendas.length}
-              </div>
-              <div>
-                <strong>Ticket Médio:</strong> R$ ${vendas.length ? (vendas.reduce((acc, v) => acc + v.total, 0) / vendas.length).toFixed(2) : '0.00'}
-              </div>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // ========== FUNÇÕES GLOBAIS ==========
-    window.reporEstoque = function(produtoId) {
-      const produto = produtos.find(p => p.id === produtoId);
-      if (!produto) return;
-      
-      const quantidade = prompt(`Quantidade para repor ${produto.nome}?`, '10');
-      if (quantidade && !isNaN(quantidade)) {
-        produto.quantidade += parseInt(quantidade);
-        salvarDados();
-        showToast(`+${quantidade} unidades de ${produto.nome}`, 'success');
-        renderPage(paginaAtual);
+      if (produtos.find(p => p.codigo === codigo)) {
+        mostrarToast('Código já cadastrado!', 'error');
+        return;
       }
-    };
-
-    window.editarProduto = function(produtoId) {
-      const produto = produtos.find(p => p.id === produtoId);
-      if (!produto) return;
       
-      const novoNome = prompt('Nome do produto:', produto.nome);
-      if (novoNome) produto.nome = novoNome;
-      
-      const novoPreco = prompt('Preço:', produto.preco);
-      if (novoPreco && !isNaN(novoPreco)) produto.preco = parseFloat(novoPreco);
-      
-      const novaQuantidade = prompt('Quantidade:', produto.quantidade);
-      if (novaQuantidade && !isNaN(novaQuantidade)) produto.quantidade = parseInt(novaQuantidade);
+      produtos.push({
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        nome,
+        codigo,
+        preco,
+        quantidade,
+        estoqueMinimo: minimo
+      });
       
       salvarDados();
-      showToast('Produto atualizado', 'success');
-      renderPage('estoque');
-    };
-
-    window.excluirProduto = function(produtoId) {
-      if (confirm('Tem certeza que deseja excluir este produto?')) {
+      atualizarStats();
+      mostrarToast('Produto cadastrado com sucesso!', 'success');
+      mudarPagina('estoque');
+    }
+    
+    // ========== MODAL LOTE ==========
+    function abrirModalLote() {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay';
+      modal.innerHTML = `
+        <div class="modal">
+          <h3><i class="fas fa-upload"></i> Importar Produtos em Lote</h3>
+          <p style="color: #6b7280; margin: 12px 0;">
+            Cole os produtos no formato:<br>
+            <code>Nome; Código; Preço; Quantidade; Estoque Mínimo (opcional)</code>
+          </p>
+          <textarea id="loteInput" rows="10" style="width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: monospace;" placeholder="Água 500ml;7891234567890;2.50;50;10&#10;Refrigerante;7892345678901;4.99;30;15&#10;Chocolate;7893456789012;7.90;20;10"></textarea>
+          
+          <div class="flex mt-4" style="justify-content: flex-end;">
+            <button class="btn" onclick="this.closest('.modal-overlay').remove()">Cancelar</button>
+            <button class="btn btn-primary" onclick="processarLote()">Importar</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+    }
+    
+    function processarLote() {
+      const texto = document.getElementById('loteInput').value;
+      const linhas = texto.split('\n').filter(l => l.trim());
+      let adicionados = 0;
+      let ignorados = 0;
+      
+      linhas.forEach(linha => {
+        const partes = linha.split(';').map(p => p.trim());
+        if (partes.length >= 4) {
+          const [nome, codigo, preco, quantidade, minimo] = partes;
+          
+          if (!produtos.find(p => p.codigo === codigo)) {
+            produtos.push({
+              id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+              nome,
+              codigo,
+              preco: parseFloat(preco),
+              quantidade: parseInt(quantidade),
+              estoqueMinimo: minimo ? parseInt(minimo) : 10
+            });
+            adicionados++;
+          } else {
+            ignorados++;
+          }
+        }
+      });
+      
+      salvarDados();
+      atualizarStats();
+      
+      document.querySelector('.modal-overlay').remove();
+      mostrarToast(`${adicionados} produtos importados! ${ignorados} ignorados (códigos duplicados)`, 'success');
+      
+      if (paginaAtual === 'estoque') renderizarEstoque();
+    }
+    
+    // ========== RENDERIZAR VENDAS ==========
+    function renderizarVendas() {
+      const total = carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
+      
+      document.getElementById('content').innerHTML = `
+        <div class="grid-2">
+          <div class="card">
+            <h3 class="mb-4"><i class="fas fa-search"></i> Buscar Produtos</h3>
+            <div class="flex mb-4">
+              <input type="text" id="buscaVenda" placeholder="Nome ou código" class="w-full">
+              <button class="btn btn-primary" onclick="abrirScanner()">
+                <i class="fas fa-barcode"></i>
+              </button>
+            </div>
+            <div id="listaProdutos" style="max-height: 500px; overflow-y: auto;">
+              ${produtos.map(p => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e5e7eb;">
+                  <div>
+                    <div style="font-weight: 500;">${p.nome}</div>
+                    <div style="color: #6b7280; font-size: 0.9rem;">
+                      R$ ${p.preco.toFixed(2)} | Estoque: ${p.quantidade}
+                    </div>
+                  </div>
+                  <button class="btn btn-primary btn-sm" onclick="adicionarAoCarrinho('${p.id}')" ${p.quantidade === 0 ? 'disabled' : ''}>
+                    <i class="fas fa-plus"></i>
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+          
+          <div class="card">
+            <h3 class="mb-4"><i class="fas fa-shopping-cart"></i> Carrinho</h3>
+            <div id="carrinhoContainer" style="max-height: 400px; overflow-y: auto;">
+              ${carrinho.length === 0 ? 
+                '<p style="color: #9ca3af; text-align: center; padding: 20px;">Carrinho vazio</p>' : 
+                carrinho.map((item, i) => `
+                  <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
+                    <div style="flex: 1;">
+                      <div>${item.nome}</div>
+                      <div style="color: #6b7280; font-size: 0.9rem;">
+                        ${item.quantidade}x R$ ${item.preco.toFixed(2)}
+                      </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="font-weight: 600;">R$ ${(item.preco * item.quantidade).toFixed(2)}</span>
+                      <button class="btn btn-sm" onclick="removerDoCarrinho(${i})">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                `).join('')
+              }
+            </div>
+            
+            <hr style="margin: 16px 0; border: none; border-top: 2px solid #e5e7eb;">
+            
+            <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 16px;">
+              Total: R$ ${total.toFixed(2)}
+            </div>
+            
+            <button class="btn btn-success w-full" onclick="finalizarVenda()" ${carrinho.length === 0 ? 'disabled' : ''}>
+              <i class="fas fa-check-circle"></i> Finalizar Venda
+            </button>
+            
+            ${carrinho.length > 0 ? `
+              <button class="btn w-full mt-4" onclick="limparCarrinho()">
+                <i class="fas fa-trash"></i> Limpar Carrinho
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      
+      // Busca
+      document.getElementById('buscaVenda').addEventListener('input', (e) => {
+        const termo = e.target.value.toLowerCase();
+        const container = document.getElementById('listaProdutos');
+        const filtrados = produtos.filter(p => 
+          p.nome.toLowerCase().includes(termo) || p.codigo.includes(termo)
+        );
+        
+        container.innerHTML = filtrados.map(p => `
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #e5e7eb;">
+            <div>
+              <div style="font-weight: 500;">${p.nome}</div>
+              <div style="color: #6b7280; font-size: 0.9rem;">
+                R$ ${p.preco.toFixed(2)} | Estoque: ${p.quantidade}
+              </div>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="adicionarAoCarrinho('${p.id}')" ${p.quantidade === 0 ? 'disabled' : ''}>
+              <i class="fas fa-plus"></i>
+            </button>
+          </div>
+        `).join('');
+      });
+    }
+    
+    // ========== FUNÇÕES DO CARRINHO ==========
+    function adicionarAoCarrinho(produtoId) {
+      const produto = produtos.find(p => p.id === produtoId);
+      if (!produto || produto.quantidade === 0) {
+        mostrarToast('Produto sem estoque!', 'error');
+        return;
+      }
+      
+      const item = carrinho.find(i => i.id === produtoId);
+      if (item) {
+        if (item.quantidade < produto.quantidade) {
+          item.quantidade++;
+        } else {
+          mostrarToast('Quantidade máxima atingida!', 'error');
+          return;
+        }
+      } else {
+        carrinho.push({ ...produto, quantidade: 1 });
+      }
+      
+      mostrarToast(`${produto.nome} adicionado`, 'success');
+      renderizarVendas();
+    }
+    
+    function removerDoCarrinho(index) {
+      carrinho.splice(index, 1);
+      renderizarVendas();
+    }
+    
+    function limparCarrinho() {
+      if (confirm('Limpar carrinho?')) {
+        carrinho = [];
+        renderizarVendas();
+      }
+    }
+    
+    function finalizarVenda() {
+      // Verificar estoque
+      for (let item of carrinho) {
+        const produto = produtos.find(p => p.id === item.id);
+        if (!produto || produto.quantidade < item.quantidade) {
+          mostrarToast(`Estoque insuficiente para ${item.nome}`, 'error');
+          return;
+        }
+      }
+      
+      // Atualizar estoque
+      carrinho.forEach(item => {
+        const produto = produtos.find(p => p.id === item.id);
+        produto.quantidade -= item.quantidade;
+      });
+      
+      // Registrar venda
+      const total = carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
+      vendas.push({
+        id: 'v' + Date.now(),
+        data: new Date().toISOString(),
+        itens: [...carrinho],
+        total
+      });
+      
+      salvarDados();
+      atualizarStats();
+      
+      mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
+      carrinho = [];
+      mudarPagina('vendas');
+    }
+    
+    // ========== FUNÇÕES DE ESTOQUE ==========
+    function ajustarEstoque(produtoId) {
+      const produto = produtos.find(p => p.id === produtoId);
+      if (!produto) return;
+      
+      const novaQtd = prompt(`Quantidade atual: ${produto.quantidade}\nNova quantidade:`, produto.quantidade);
+      if (novaQtd !== null && !isNaN(novaQtd)) {
+        produto.quantidade = parseInt(novaQtd);
+        salvarDados();
+        atualizarStats();
+        mostrarToast('Estoque atualizado!', 'success');
+        renderizarEstoque();
+      }
+    }
+    
+    function excluirProduto(produtoId) {
+      if (confirm('Excluir este produto?')) {
         produtos = produtos.filter(p => p.id !== produtoId);
         salvarDados();
-        showToast('Produto excluído', 'success');
-        renderPage('estoque');
+        atualizarStats();
+        mostrarToast('Produto excluído!', 'success');
+        renderizarEstoque();
       }
-    };
-
-    window.abrirModalProduto = function() {
-      renderPage('cadastro');
-    };
-
-    window.abrirModalCliente = function() {
-      const nome = prompt('Nome do cliente:');
-      if (!nome) return;
-      
-      const telefone = prompt('Telefone:');
-      const email = prompt('Email:');
-      
-      const novoCliente = {
-        id: 'c' + Date.now(),
-        nome,
-        telefone: telefone || '',
-        email: email || '',
-        totalCompras: 0
-      };
-      
-      clientes.push(novoCliente);
-      salvarDados();
-      showToast('Cliente cadastrado', 'success');
-      renderPage('clientes');
-    };
-
-    // ========== INICIALIZAÇÃO ==========
-    inicializarDados();
+    }
     
-    document.getElementById('header-container').innerHTML = renderHeader();
-    document.getElementById('footer-container').innerHTML = renderFooter();
-    
-    renderPage('dashboard');
+    // ========== INICIAR ==========
+    inicializar();
   </script>
 </body>
 </html>
