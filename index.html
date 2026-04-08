@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SaaS Conveniência · Estoque Inteligente</title>
+  <!-- QuaggaJS para leitura de código de barras -->
+  <script src="https://cdn.jsdelivr.net/npm/quagga@0.12.1/dist/quagga.min.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <style>
+    /* ========== GLOBAL STYLES ========== */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: #f0f4f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Container principal que recebe header, main e footer */
+    #app {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* Área do conteúdo principal (onde o router/SPA carrega as views) */
+    #main-content {
+      flex: 1;
+      padding: 24px 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Utilitários */
+    .btn {
+      padding: 10px 18px;
+      border-radius: 40px;
+      border: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.02);
+    }
+
+    .btn-primary {
+      background: #1e4bd2;
+      color: white;
+      border: 1px solid #1e4bd2;
+    }
+
+    .btn-primary:hover {
+      background: #163aa8;
+    }
+
+    .btn-outline {
+      border: 1px solid #cdd9e6;
+      background: white;
+      color: #1e2b3c;
+    }
+
+    .btn-outline:hover {
+      background: #f5f8ff;
+    }
+
+    .card {
+      background: white;
+      border-radius: 24px;
+      padding: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.03);
+      border: 1px solid #eef2f6;
+    }
+
+    input, select {
+      padding: 12px 16px;
+      border-radius: 16px;
+      border: 1.5px solid #dbe2ea;
+      font-size: 1rem;
+      outline: none;
+      transition: border 0.2s;
+      background: white;
+    }
+
+    input:focus {
+      border-color: #1e4bd2;
+      box-shadow: 0 0 0 3px rgba(30,75,210,0.1);
+    }
+
+    /* Tabelas */
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: white;
+    }
+
+    th {
+      text-align: left;
+      padding: 16px 12px;
+      background: #f9fbfd;
+      font-weight: 600;
+      color: #2e445e;
+      border-bottom: 1px solid #e2e9f0;
+    }
+
+    td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #ecf1f6;
+    }
+
+    .badge {
+      background: #eef2ff;
+      color: #1e4bd2;
+      padding: 4px 12px;
+      border-radius: 40px;
+      font-weight: 500;
+      font-size: 0.85rem;
+    }
+
+    /* modal (leitor) */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background: white;
+      border-radius: 32px;
+      max-width: 550px;
+      width: 90%;
+      padding: 24px;
+    }
+
+    #scanner-container {
+      width: 100%;
+      height: 260px;
+      background: #0a0f1a;
+      border-radius: 24px;
+      overflow: hidden;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    #scanner-container video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .drawingBuffer {
+      display: none;
+    }
+
+    /* Toast simples */
+    #toast-message {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e2b3c;
+      color: white;
+      padding: 12px 24px;
+      border-radius: 60px;
+      box-shadow: 0 12px 20px rgba(0,0,0,0.2);
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <!-- HEADER será injetado aqui via JS -->
+    <div id="header-container"></div>
+
+    <!-- CONTEÚDO DINÂMICO (estoque / cadastro / vendas) -->
+    <main id="main-content"></main>
+
+    <!-- FOOTER será injetado aqui -->
+    <div id="footer-container"></div>
+  </div>
+
+  <!-- Toast para feedback -->
+  <div id="toast-message">✔ Mensagem</div>
+
+  <!-- MODAL SCANNER (global) -->
+  <div id="scanner-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="font-size: 1.5rem;"><i class="fas fa-qrcode" style="margin-right: 8px;"></i>Leitor de código de barras</h3>
+        <button id="close-scanner-btn" class="btn-outline" style="border-radius: 40px; padding: 6px 12px;"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="scanner-container"></div>
+      <p style="color: #4a627a; margin: 10px 0 4px;"><i class="fas fa-info-circle"></i> Posicione o código de barras na câmera.</p>
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <input type="text" id="manual-barcode-input" placeholder="Ou digite o código" style="flex:1;">
+        <button id="apply-manual-barcode" class="btn-primary"><i class="fas fa-check"></i> Usar</button>
+      </div>
+      <p id="scan-feedback" style="margin-top: 12px; font-weight: 500;"></p>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      "use strict";
+
+      // ========== DADOS GLOBAIS (localStorage) ==========
+      let produtos = [];       // { id, nome, codigoBarras, preco, quantidade, categoria }
+      let vendas = [];         // { id, data, produtos: [{produtoId, quantidade, precoUnitario}], total }
+
+      // Inicializa com alguns produtos exemplo (se vazio)
+      function inicializarDados() {
+        const storedProdutos = localStorage.getItem('conveniencia_produtos');
+        const storedVendas = localStorage.getItem('conveniencia_vendas');
+        if(storedProdutos) {
+          produtos = JSON.parse(storedProdutos);
+        } else {
+          produtos = [
+            { id: '1', nome: 'Água Mineral 500ml', codigoBarras: '7891234567890', preco: 2.50, quantidade: 45, categoria: 'Bebidas' },
+            { id: '2', nome: 'Refrigerante Lata 350ml', codigoBarras: '7892345678901', preco: 4.99, quantidade: 32, categoria: 'Bebidas' },
+            { id: '3', nome: 'Chocolate Barra 100g', codigoBarras: '7893456789012', preco: 7.90, quantidade: 18, categoria: 'Doces' },
+            { id: '4', nome: 'Salgadinho 80g', codigoBarras: '7894567890123', preco: 6.50, quantidade: 24, categoria: 'Salgados' }
+          ];
+        }
+        if(storedVendas) {
+          vendas = JSON.parse(storedVendas);
+        } else {
+          vendas = [];
+        }
+      }
+      inicializarDados();
+
+      function salvarProdutos() {
+        localStorage.setItem('conveniencia_produtos', JSON.stringify(produtos));
+      }
+      function salvarVendas() {
+        localStorage.setItem('conveniencia_vendas', JSON.stringify(vendas));
+      }
+
+      // ========== COMPONENTES SEPARADOS ==========
+      // Header (HTML string)
+      function renderHeader() {
+        return `
+          <header style="background: white; border-bottom: 1px solid #e9edf2; padding: 12px 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.02);">
+            <div style="display: flex; align-items: center; justify-content: space-between; max-width: 1400px; margin: 0 auto; flex-wrap: wrap; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <i class="fas fa-store" style="font-size: 28px; color: #1e4bd2;"></i>
+                <h1 style="font-weight: 700; font-size: 1.8rem; color: #0a1e2f;">MiniMarket<span style="font-weight: 400; color: #4f6f8f;"> SaaS</span></h1>
+                <span class="badge" style="background:#eef2ff; color:#1e4bd2; margin-left: 8px;"><i class="fas fa-box"></i> Estoque inteligente</span>
+              </div>
+              <nav style="display: flex; gap: 8px;">
+                <button class="btn btn-outline nav-link" data-page="estoque"><i class="fas fa-cubes"></i> Estoque</button>
+                <button class="btn btn-outline nav-link" data-page="cadastro"><i class="fas fa-plus-circle"></i> Cadastrar</button>
+                <button class="btn btn-outline nav-link" data-page="vendas"><i class="fas fa-shopping-cart"></i> Vendas</button>
+              </nav>
+              <div style="display: flex; gap: 8px;">
+                <button id="scan-trigger-btn" class="btn btn-primary"><i class="fas fa-barcode"></i> Ler código</button>
+              </div>
+            </div>
+          </header>
+        `;
+      }
+
+      // Footer
+      function renderFooter() {
+        return `
+          <footer style="background: #ffffffd6; backdrop-filter: blur(4px); border-top: 1px solid #dee6ed; padding: 16px 24px; margin-top: 20px;">
+            <div style="max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+              <span style="color: #3b5e7e;"><i class="far fa-copyright"></i> 2026 Conveniência SaaS · Controle total</span>
+              <span><i class="fas fa-database"></i> Dados salvos localmente</span>
+            </div>
+          </footer>
+        `;
+      }
+
+      // ========== RENDERIZAÇÃO DAS PÁGINAS ==========
+      const mainContent = document.getElementById('main-content');
+      
+      function renderPage(page) {
+        if (page === 'estoque') {
+          mainContent.innerHTML = viewEstoque();
+        } else if (page === 'cadastro') {
+          mainContent.innerHTML = viewCadastro();
+        } else if (page === 'vendas') {
+          mainContent.innerHTML = viewVendas();
+        }
+        // Atualizar eventos específicos da página
+        if (page === 'estoque') attachEstoqueEvents();
+        if (page === 'cadastro') attachCadastroEvents();
+        if (page === 'vendas') attachVendasEvents();
+        
+        // destaca link ativo
+        document.querySelectorAll('.nav-link').forEach(btn => {
+          btn.classList.remove('btn-primary');
+          btn.classList.add('btn-outline');
+          if(btn.dataset.page === page) {
+            btn.classList.add('btn-primary');
+            btn.classList.remove('btn-outline');
+          }
+        });
+      }
+
+      // ---------- VIEW ESTOQUE ----------
+      function viewEstoque() {
+        const totalItens = produtos.reduce((acc, p) => acc + p.quantidade, 0);
+        const valorTotal = produtos.reduce((acc, p) => acc + (p.preco * p.quantidade), 0).toFixed(2);
+        return `
+          <div>
+            <div class="dashboard-cards" style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; margin-bottom:28px;">
+              <div class="card"><span class="stat-label">Produtos</span><div class="stat-number">${produtos.length}</div></div>
+              <div class="card"><span class="stat-label">Itens em estoque</span><div class="stat-number">${totalItens}</div></div>
+              <div class="card"><span class="stat-label">Valor total (R$)</span><div class="stat-number">R$ ${valorTotal}</div></div>
+            </div>
+            <div class="card">
+              <div style="display:flex; justify-content:space-between; margin-bottom:16px;">
+                <h2><i class="fas fa-list"></i> Produtos em estoque</h2>
+                <button class="btn btn-outline" id="refresh-estoque-btn"><i class="fas fa-sync-alt"></i> Atualizar</button>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead><tr><th>Produto</th><th>Código</th><th>Preço</th><th>Qtd</th><th>Categoria</th><th>Ações</th></tr></thead>
+                  <tbody id="estoque-tbody">
+                    ${produtos.map(p => `
+                      <tr>
+                        <td>${p.nome}</td>
+                        <td><span class="badge">${p.codigoBarras}</span></td>
+                        <td>R$ ${p.preco.toFixed(2)}</td>
+                        <td>${p.quantidade}</td>
+                        <td>${p.categoria || 'Geral'}</td>
+                        <td>
+                          <button class="btn-outline" style="padding:4px 12px;" data-editar="${p.id}"><i class="fas fa-edit"></i></button>
+                          <button class="btn-outline" style="padding:4px 12px; color:#c00;" data-excluir="${p.id}"><i class="fas fa-trash"></i></button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      function attachEstoqueEvents() {
+        document.getElementById('refresh-estoque-btn')?.addEventListener('click', ()=> renderPage('estoque'));
+        document.querySelectorAll('[data-editar]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = btn.dataset.editar;
+            const prod = produtos.find(p => p.id === id);
+            if(prod) abrirModalEdicao(prod);
+          });
+        });
+        document.querySelectorAll('[data-excluir]').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            if(confirm('Remover produto?')) {
+              produtos = produtos.filter(p => p.id !== btn.dataset.excluir);
+              salvarProdutos();
+              renderPage('estoque');
+              showToast('Produto removido');
+            }
+          });
+        });
+      }
+
+      function abrirModalEdicao(produto) {
+        // Simples prompt para edição (para não complicar)
+        const novoNome = prompt('Nome do produto:', produto.nome);
+        if(novoNome) produto.nome = novoNome;
+        const novoPreco = prompt('Preço:', produto.preco);
+        if(novoPreco) produto.preco = parseFloat(novoPreco);
+        const novaQtd = prompt('Quantidade:', produto.quantidade);
+        if(novaQtd) produto.quantidade = parseInt(novaQtd);
+        salvarProdutos();
+        renderPage('estoque');
+        showToast('Produto atualizado');
+      }
+
+      // ---------- VIEW CADASTRO ----------
+      function viewCadastro() {
+        return `
+          <div class="card" style="max-width:700px; margin:0 auto;">
+            <h2 style="margin-bottom:20px;"><i class="fas fa-box-open"></i> Cadastrar novo produto</h2>
+            <form id="form-cadastro">
+              <div style="display:grid; gap:16px;">
+                <input type="text" id="cad-nome" placeholder="Nome do produto *" required>
+                <div style="display:flex; gap:10px;">
+                  <input type="text" id="cad-codigo" placeholder="Código de barras" style="flex:2">
+                  <button type="button" class="btn btn-outline" id="scan-for-cadastro"><i class="fas fa-barcode"></i> Ler</button>
+                </div>
+                <div style="display:flex; gap:10px;">
+                  <input type="number" id="cad-preco" placeholder="Preço R$" step="0.01" required>
+                  <input type="number" id="cad-quantidade" placeholder="Quantidade" required>
+                </div>
+                <input type="text" id="cad-categoria" placeholder="Categoria (ex: Bebidas)">
+                <button type="submit" class="btn btn-primary" style="justify-content:center;"><i class="fas fa-save"></i> Salvar produto</button>
+              </div>
+            </form>
+            <p style="margin-top:16px; color:#4a627a;"><i class="fas fa-info-circle"></i> Use o leitor para preencher o código automaticamente.</p>
+          </div>
+        `;
+      }
+
+      function attachCadastroEvents() {
+        const form = document.getElementById('form-cadastro');
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const nome = document.getElementById('cad-nome').value.trim();
+          const codigo = document.getElementById('cad-codigo').value.trim() || 'SEM_CODIGO';
+          const preco = parseFloat(document.getElementById('cad-preco').value);
+          const quantidade = parseInt(document.getElementById('cad-quantidade').value);
+          const categoria = document.getElementById('cad-categoria').value.trim() || 'Geral';
+          if(!nome || isNaN(preco) || isNaN(quantidade)) return showToast('Preencha nome, preço e quantidade', true);
+          
+          const novoId = Date.now() + '' + Math.floor(Math.random()*1000);
+          produtos.push({ id: novoId, nome, codigoBarras: codigo, preco, quantidade, categoria });
+          salvarProdutos();
+          showToast('Produto cadastrado!');
+          form.reset();
+          renderPage('estoque');
+        });
+        document.getElementById('scan-for-cadastro').addEventListener('click', () => {
+          openScanner((codigo) => {
+            document.getElementById('cad-codigo').value = codigo;
+          });
+        });
+      }
+
+      // ---------- VIEW VENDAS (PDV simplificado) ----------
+      let carrinhoVenda = [];
+      function viewVendas() {
+        return `
+          <div style="display:grid; grid-template-columns:2fr 1fr; gap:24px;">
+            <div class="card">
+              <h3><i class="fas fa-search"></i> Buscar produto</h3>
+              <div style="display:flex; gap:10px; margin:16px 0;">
+                <input type="text" id="busca-produto-venda" placeholder="Nome ou código" style="flex:1">
+                <button class="btn btn-outline" id="scan-venda-btn"><i class="fas fa-barcode"></i></button>
+              </div>
+              <div id="resultado-busca-venda" style="max-height:300px; overflow-y:auto;"></div>
+            </div>
+            <div class="card">
+              <h3><i class="fas fa-shopping-basket"></i> Carrinho</h3>
+              <div id="carrinho-container"></div>
+              <hr style="margin:16px 0">
+              <div style="font-size:1.4rem; font-weight:700;">Total: R$ <span id="venda-total">0.00</span></div>
+              <button class="btn btn-primary" style="width:100%; margin-top:16px;" id="finalizar-venda"><i class="fas fa-check-circle"></i> Finalizar venda</button>
+            </div>
+          </div>
+        `;
+      }
+
+      function attachVendasEvents() {
+        const buscaInput = document.getElementById('busca-produto-venda');
+        const resultadoDiv = document.getElementById('resultado-busca-venda');
+        
+        function atualizarCarrinhoUI() {
+          const container = document.getElementById('carrinho-container');
+          const totalSpan = document.getElementById('venda-total');
+          let total = 0;
+          container.innerHTML = carrinhoVenda.length ? '' : '<p>Carrinho vazio</p>';
+          carrinhoVenda.forEach((item, idx) => {
+            total += item.preco * item.quantidade;
+            container.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:8px;">${item.nome} (${item.quantidade}x) R$${(item.preco*item.quantidade).toFixed(2)} <button data-remover="${idx}" style="border:none; background:none; color:red;">🗑️</button></div>`;
+          });
+          totalSpan.innerText = total.toFixed(2);
+          document.querySelectorAll('[data-remover]').forEach(b => b.addEventListener('click', (e) => {
+            carrinhoVenda.splice(b.dataset.remover, 1);
+            atualizarCarrinhoUI();
+          }));
+        }
+
+        function buscarProduto(termo) {
+          if(!termo) { resultadoDiv.innerHTML = ''; return; }
+          const resultados = produtos.filter(p => p.nome.toLowerCase().includes(termo.toLowerCase()) || p.codigoBarras.includes(termo));
+          resultadoDiv.innerHTML = resultados.map(p => `
+            <div style="padding:8px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+              <span>${p.nome} - R$${p.preco.toFixed(2)} (${p.quantidade} und)</span>
+              <button class="btn-outline add-carrinho" data-id="${p.id}" style="padding:2px 10px;">+ Adicionar</button>
+            </div>
+          `).join('');
+          document.querySelectorAll('.add-carrinho').forEach(btn => btn.addEventListener('click', () => {
+            const prod = produtos.find(p => p.id === btn.dataset.id);
+            if(prod && prod.quantidade > 0) {
+              const exist = carrinhoVenda.find(i => i.id === prod.id);
+              if(exist) exist.quantidade++; else carrinhoVenda.push({...prod, quantidade:1});
+              prod.quantidade--;
+              salvarProdutos();
+              atualizarCarrinhoUI();
+              showToast('Adicionado ao carrinho');
+            } else showToast('Sem estoque', true);
+          }));
+        }
+
+        buscaInput.addEventListener('input', (e) => buscarProduto(e.target.value));
+        document.getElementById('scan-venda-btn').addEventListener('click', () => openScanner(codigo => {
+          buscaInput.value = codigo;
+          buscarProduto(codigo);
+        }));
+        document.getElementById('finalizar-venda').addEventListener('click', () => {
+          if(carrinhoVenda.length===0) return showToast('Carrinho vazio', true);
+          const total = carrinhoVenda.reduce((acc,i)=> acc + i.preco*i.quantidade,0);
+          vendas.push({ id: Date.now(), data: new Date().toISOString(), itens: carrinhoVenda.map(i => ({...i})), total });
+          salvarVendas();
+          carrinhoVenda = [];
+          atualizarCarrinhoUI();
+          renderPage('vendas');
+          showToast('Venda finalizada!');
+        });
+        atualizarCarrinhoUI();
+      }
+
+      // ========== SCANNER ==========
+      let scannerCallback = null;
+      const modal = document.getElementById('scanner-modal');
+      
+      function openScanner(callback) {
+        scannerCallback = callback;
+        modal.style.display = 'flex';
+        Quagga.init({
+          inputStream: { name: "Live", type: "LiveStream", target: document.querySelector('#scanner-container'), constraints: { facingMode: "environment" } },
+          decoder: { readers: ["ean_reader", "ean_8_reader", "code_128_reader", "code_39_reader", "upc_reader"] }
+        }, function(err) {
+          if (err) { showToast("Erro na câmera", true); return; }
+          Quagga.start();
+        });
+        Quagga.onDetected((data) => {
+          if (data?.codeResult?.code) {
+            Quagga.stop();
+            modal.style.display = 'none';
+            if(scannerCallback) scannerCallback(data.codeResult.code);
+          }
+        });
+      }
+
+      document.getElementById('close-scanner-btn').addEventListener('click', ()=>{
+        Quagga.stop();
+        modal.style.display = 'none';
+      });
+      document.getElementById('apply-manual-barcode').addEventListener('click', ()=>{
+        const manual = document.getElementById('manual-barcode-input').value;
+        if(manual) { Quagga.stop(); modal.style.display = 'none'; if(scannerCallback) scannerCallback(manual); }
+      });
+      
+      // Scan trigger global
+      document.addEventListener('click', (e) => {
+        if(e.target.closest('#scan-trigger-btn')) {
+          openScanner((codigo) => {
+            const busca = document.getElementById('busca-produto-venda');
+            if(busca) { busca.value = codigo; buscarProduto(codigo); }
+            else showToast(`Código lido: ${codigo}`);
+          });
+        }
+      });
+
+      // Toast
+      function showToast(msg, isError=false) {
+        const toast = document.getElementById('toast-message');
+        toast.textContent = msg;
+        toast.style.background = isError ? '#b91c1c' : '#1e2b3c';
+        toast.style.opacity = 1;
+        setTimeout(()=> toast.style.opacity = 0, 2500);
+      }
+
+      // ========== INICIALIZAÇÃO ==========
+      function init() {
+        document.getElementById('header-container').innerHTML = renderHeader();
+        document.getElementById('footer-container').innerHTML = renderFooter();
+        // navegação
+        document.querySelectorAll('.nav-link').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const page = btn.dataset.page;
+            renderPage(page);
+          });
+        });
+        // página inicial
+        renderPage('estoque');
+        window.showToast = showToast;
+      }
+      init();
+    })();
+  </script>
+</body>
+</html>
