@@ -1,396 +1,206 @@
 // ============================================
-// Scanner.js - Unificado para Câmera e USB
-// Com Bip Sonoro Funcional e Design Responsivo
+// Scanner.js - Versão OTIMIZADA (RÁPIDA)
+// Câmera + USB + Bip Sonoro
 // ============================================
 
 const scanner = {
-  // Modo câmera
+  // Câmera
   ativo: false,
   reader: null,
   callback: null,
   
-  // Modo USB
+  // USB
   bufferUSB: '',
   timeoutUSB: null,
   usbAtivo: true,
   
-  // Áudio
-  audioInicializado: false,
-  
-  // Configuração com TODOS os formatos
-  hints: new Map([
-    [ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.QR_CODE,
-      ZXing.BarcodeFormat.EAN_13,
-      ZXing.BarcodeFormat.EAN_8,
-      ZXing.BarcodeFormat.UPC_A,
-      ZXing.BarcodeFormat.UPC_E,
-      ZXing.BarcodeFormat.CODE_128,
-      ZXing.BarcodeFormat.CODE_39,
-      ZXing.BarcodeFormat.CODE_93,
-      ZXing.BarcodeFormat.CODABAR,
-      ZXing.BarcodeFormat.ITF,
-      ZXing.BarcodeFormat.DATA_MATRIX,
-      ZXing.BarcodeFormat.PDF_417,
-      ZXing.BarcodeFormat.AZTEC
-    ]],
-    [ZXing.DecodeHintType.TRY_HARDER, true]
-  ]),
-  
-  // ========== INICIALIZAÇÃO DO SCANNER USB ==========
+  // Cache de áudio para performance
+  audioContext: null,
+
+  // ========== INICIALIZAR ==========
+  inicializar() {
+    this.inicializarUSB();
+    this.prepararAudio();
+    console.log('✅ Scanner rápido inicializado');
+  },
+
+  // ========== SCANNER USB (OTIMIZADO) ==========
   inicializarUSB() {
     document.addEventListener('keypress', (e) => {
       if (!this.usbAtivo) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
-      // Ignorar se estiver digitando em um input
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
-      
-      // Se for ENTER
-      if (e.key === 'Enter' || e.keyCode === 13) {
+      if (e.key === 'Enter') {
         e.preventDefault();
-        e.stopPropagation();
-        
-        if (this.bufferUSB.length > 5) {
-          this.processarCodigoUSB(this.bufferUSB);
+        if (this.bufferUSB.length > 3) {
+          this.processarCodigo(this.bufferUSB);
         }
-        
         this.bufferUSB = '';
         return;
       }
       
-      // Acumula caracteres
       this.bufferUSB += e.key;
       
-      // Reset do timeout
       clearTimeout(this.timeoutUSB);
       this.timeoutUSB = setTimeout(() => {
-        if (this.bufferUSB.length > 5) {
-          this.processarCodigoUSB(this.bufferUSB);
+        if (this.bufferUSB.length > 3) {
+          this.processarCodigo(this.bufferUSB);
         }
         this.bufferUSB = '';
-      }, 50);
-    });
-    
-    // Prevenir comportamento do Enter
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && this.bufferUSB.length > 0) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    }, true);
-  },
-  
-  processarCodigoUSB(codigo) {
-    console.log('📟 Leitor USB:', codigo);
-    this.tocarBip();
-    this.flashVerde();
-    this.processarCodigo(codigo, 'USB');
-  },
-  
-  // ========== INICIALIZAR ÁUDIO (PARA MOBILE) ==========
-  inicializarAudio() {
-    const eventos = ['touchstart', 'click'];
-    
-    eventos.forEach(evento => {
-      document.addEventListener(evento, () => {
-        if (!this.audioInicializado) {
-          try {
-            const ctx = new (window.AudioContext || window.webkitAudioContext)();
-            ctx.resume();
-            this.audioInicializado = true;
-            console.log('✅ Áudio inicializado!');
-          } catch (e) {
-            console.log('ℹ️ Áudio será ativado na primeira interação');
-          }
-        }
-      }, { once: true });
+      }, 30); // Mais rápido
     });
   },
-  
-  // ========== BIP SONORO ==========
+
+  // ========== ÁUDIO OTIMIZADO ==========
+  prepararAudio() {
+    // Pré-criar contexto de áudio
+    const ativar = () => {
+      try {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        this.audioContext.resume();
+      } catch (e) {}
+    };
+    
+    document.addEventListener('touchstart', ativar, { once: true });
+    document.addEventListener('click', ativar, { once: true });
+  },
+
   tocarBip() {
-    // Método 1: Web Audio API (leve e funcional)
-    try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      
-      if (audioContext.state === 'suspended') {
-        audioContext.resume();
-      }
-      
-      const now = audioContext.currentTime;
-      
-      // Primeiro bip (800Hz)
-      const osc1 = audioContext.createOscillator();
-      const gain1 = audioContext.createGain();
-      osc1.type = 'square';
-      osc1.frequency.value = 800;
-      gain1.gain.setValueAtTime(0.2, now);
-      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-      osc1.connect(gain1);
-      gain1.connect(audioContext.destination);
-      osc1.start(now);
-      osc1.stop(now + 0.1);
-      
-      // Segundo bip (1000Hz)
-      const osc2 = audioContext.createOscillator();
-      const gain2 = audioContext.createGain();
-      osc2.type = 'square';
-      osc2.frequency.value = 1000;
-      gain2.gain.setValueAtTime(0.15, now + 0.12);
-      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
-      osc2.connect(gain2);
-      gain2.connect(audioContext.destination);
-      osc2.start(now + 0.12);
-      osc2.stop(now + 0.22);
-      
-      return;
-      
-    } catch (e) {
-      console.log('Web Audio falhou, usando fallback');
-    }
-    
-    // Método 2: Fallback simples
-    try {
-      const audio = new Audio();
-      audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgIGBgYF/f39/f3+AgICBgYGBgoKCg4ODhISEhYWFhoaGh4eHiIiIiYmJioqKi4uLjIyMjY2Njo6Oj4+PkJCQkZGRkpKSk5OTlJSUlZWVlpaWl5eXmJiYmZmZmpqam5ubnJycnZ2dnp6en5+foKCgoaGhoqKio6OjpKSkpaWlpqamp6enqKioqampqqqqq6urrKysra2trq6ur6+vsLCwsbGxsrKys7OztLS0tbW1tra2t7e3uLi4ubm5urq6u7u7vLy8vb29vr6+v7+/wMDAwcHBwsLCw8PDxMTExcXFxsbGx8fHyMjIycnJysrKy8vLzMzMzc3Nzs7Oz8/P0NDQ0dHR0tLS09PT1NTU1dXV1tbW19fX2NjY2dnZ2tra29vb3Nzc3d3d3t7e39/f4ODg4eHh4uLi4+Pj5OTk5eXl5ubm5+fn6Ojo6enp6urq6+vr7Ozs7e3t7u7u7+/v8PDw8fHx8vLy8/Pz9PT09fX19vb29/f3+Pj4+fn5+vr6+/v7/Pz8/f39/v7+////AAA=';
-      audio.volume = 0.3;
-      audio.play();
-    } catch (e) {
-      // Silêncio
-    }
-  },
-  
-  // ========== FEEDBACK VISUAL ==========
-  flashVerde() {
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(16, 185, 129, 0.3);
-      z-index: 99999;
-      pointer-events: none;
-      animation: flash 0.3s ease;
-    `;
-    
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes flash {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-    document.body.appendChild(overlay);
-    
-    setTimeout(() => {
-      overlay.remove();
-      style.remove();
-    }, 300);
-  },
-  
-  // ========== MODO CÂMERA ==========
-  async abrirCamera(callback) {
-    this.callback = callback || this.handlePadrao;
-    document.getElementById('scannerModal').style.display = 'block';
-    
-    try {
-      this.reader = new ZXing.BrowserMultiFormatReader(this.hints);
-      const devices = await this.reader.listVideoInputDevices();
-      
-      // Preferir câmera traseira
-      const device = devices.find(d => 
-        d.label.toLowerCase().includes('back') || 
-        d.label.toLowerCase().includes('traseira') ||
-        d.label.toLowerCase().includes('environment')
-      ) || devices[0];
-      
-      if (!device) {
-        app.mostrarToast('Nenhuma câmera encontrada', 'error');
-        this.fecharCamera();
+    if (!this.audioContext) {
+      try {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) {
         return;
       }
-      
-      this.ativo = true;
-      
-      await this.reader.decodeFromVideoDevice(
-        device.deviceId,
-        'scanner-video',
-        (resultado, erro) => {
-          if (resultado && this.ativo) {
-            const codigo = resultado.text;
-            const formato = resultado.format;
-            
-            // Tocar bip
-            this.tocarBip();
-            
-            // Feedback visual
-            this.flashVerde();
-            
-            // Vibração
-            if (navigator.vibrate) navigator.vibrate(50);
-            
-            // Mostrar formato detectado
-            const formatoNome = this.getFormatoNome(formato);
-            document.getElementById('lastScanText').innerHTML = `
-              ✅ ${codigo}<br>
-              <small>Formato: ${formatoNome}</small>
-            `;
-            
-            // Executar callback
-            if (this.callback) {
-              this.callback(codigo, formato);
-            } else {
-              this.processarCodigo(codigo, 'Câmera');
-            }
-            
-            // Fechar após detectar
-            setTimeout(() => this.fecharCamera(), 800);
-          }
-        }
-      );
-      
-      document.getElementById('lastScanText').innerHTML = `
-        🔍 Escaneando...<br>
-        <small>QR Code ou Código de Barras</small>
-      `;
-      
-    } catch (error) {
-      console.error('Erro na câmera:', error);
-      app.mostrarToast('Erro ao acessar câmera', 'error');
-      this.fecharCamera();
     }
+    
+    try {
+      const ctx = this.audioContext;
+      if (ctx.state === 'suspended') ctx.resume();
+      
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = 'square';
+      osc.frequency.value = 800;
+      gain.gain.value = 0.15;
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.08); // Mais curto
+    } catch (e) {}
   },
-  
-  fecharCamera() {
-    this.ativo = false;
-    if (this.reader) {
-      this.reader.reset();
-      this.reader = null;
-    }
-    document.getElementById('scannerModal').style.display = 'none';
+
+  // ========== CÂMERA OTIMIZADA ==========
+  abrir(callback) {
+    this.callback = callback || this.processarCodigo.bind(this);
+    
+    const modal = document.getElementById('scannerModal');
+    if (!modal) return;
+    
+    modal.style.display = 'block';
+    
+    // Configuração mais leve
+    const hints = new Map();
+    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+      ZXing.BarcodeFormat.EAN_13,
+      ZXing.BarcodeFormat.EAN_8,
+      ZXing.BarcodeFormat.UPC_A,
+      ZXing.BarcodeFormat.CODE_128,
+      ZXing.BarcodeFormat.QR_CODE
+    ]);
+    
+    // Usar câmera traseira diretamente
+    ZXing.BrowserMultiFormatReader.decodeFromVideoDevice(
+      null,
+      'scanner-video',
+      (result, err) => {
+        if (result) {
+          const codigo = result.text;
+          
+          // Feedback imediato
+          this.tocarBip();
+          document.getElementById('lastScanText').textContent = `✅ ${codigo}`;
+          
+          if (this.callback) this.callback(codigo);
+          
+          // Fechar rápido
+          setTimeout(() => this.fechar(), 300);
+        }
+      },
+      hints
+    ).catch(err => {
+      console.error('Erro câmera:', err);
+      this.fechar();
+    });
+    
+    document.getElementById('lastScanText').textContent = '🔍 Escaneando...';
+  },
+
+  fechar() {
+    const modal = document.getElementById('scannerModal');
+    if (modal) modal.style.display = 'none';
+    
+    // Limpar recursos
     const video = document.getElementById('scanner-video');
     if (video && video.srcObject) {
-      video.srcObject.getTracks().forEach(t => t.stop());
+      const tracks = video.srcObject.getTracks();
+      tracks.forEach(track => track.stop());
       video.srcObject = null;
     }
   },
-  
-  // ========== PROCESSAMENTO UNIFICADO ==========
-  processarCodigo(codigo, origem = 'Desconhecido') {
-    console.log(`📟 Código detectado (${origem}):`, codigo);
+
+  // ========== PROCESSAR CÓDIGO (RÁPIDO) ==========
+  processarCodigo(codigo) {
+    // Remover caracteres não numéricos se for EAN/UPC
+    codigo = codigo.replace(/[^0-9]/g, '');
     
-    // Atualiza campos de busca
+    // Preencher campos rapidamente
+    const inputCodigo = document.getElementById('codigoInput');
     const buscaVenda = document.getElementById('buscaVenda');
-    const buscaEstoque = document.getElementById('buscaEstoque');
-    const codigoInput = document.getElementById('codigoInput');
     
+    if (inputCodigo) inputCodigo.value = codigo;
     if (buscaVenda) {
       buscaVenda.value = codigo;
-      buscaVenda.dispatchEvent(new Event('input'));
+      buscaVenda.dispatchEvent(new Event('input', { bubbles: true }));
     }
     
-    if (buscaEstoque) {
-      buscaEstoque.value = codigo;
-      buscaEstoque.dispatchEvent(new Event('input'));
-    }
-    
-    if (codigoInput) {
-      codigoInput.value = codigo;
-      app.mostrarToast(`Código preenchido: ${codigo}`, 'success');
-    }
-    
-    // Processa baseado na tela atual
-    if (app.paginaAtual === 'vendas') {
+    // Ações por página (verificação rápida)
+    if (typeof app !== 'undefined' && app.paginaAtual === 'vendas') {
       const produto = storage.produtos.find(p => p.codigo === codigo);
       if (produto) {
         if (produto.quantidade > 0) {
           vendas.adicionar(produto.id);
-          app.mostrarToast(`✅ ${produto.nome} adicionado`, 'success');
+          app.mostrarToast(`✅ ${produto.nome}`, 'success');
         } else {
-          app.mostrarToast(`❌ ${produto.nome} sem estoque!`, 'error');
+          app.mostrarToast(`❌ Sem estoque`, 'error');
         }
       } else {
-        app.mostrarToast(`❌ Produto não cadastrado`, 'error');
-      }
-      
-    } else if (app.paginaAtual === 'estoque') {
-      const produto = storage.produtos.find(p => p.codigo === codigo);
-      if (produto) {
-        app.mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} | Estoque: ${produto.quantidade}`);
-      } else {
-        app.mostrarToast(`Produto não encontrado`, 'error');
+        app.mostrarToast(`❌ Não encontrado`, 'error');
       }
     }
   },
-  
-  handlePadrao(codigo) {
-    this.processarCodigo(codigo, 'Câmera');
-  },
-  
-  // ========== UTILITÁRIOS ==========
-  getFormatoNome(formato) {
-    const formatos = {
-      11: 'QR Code',
-      1: 'Aztec',
-      2: 'Codabar',
-      3: 'Code 39',
-      4: 'Code 93',
-      5: 'Code 128',
-      6: 'Data Matrix',
-      7: 'EAN-8',
-      8: 'EAN-13',
-      9: 'ITF',
-      10: 'MaxiCode',
-      12: 'PDF 417',
-      13: 'UPC-A',
-      14: 'UPC-E'
-    };
-    return formatos[formato] || 'Código de Barras';
-  },
-  
-  usarCodigoManual() {
+
+  // ========== ENTRADA MANUAL ==========
+  usarManual() {
     const input = document.getElementById('manualBarcode');
-    const codigo = input.value.trim();
-    if (codigo) {
+    if (input && input.value) {
       this.tocarBip();
-      this.flashVerde();
-      if (this.callback) {
-        this.callback(codigo);
-      } else {
-        this.processarCodigo(codigo, 'Manual');
-      }
-      this.fecharCamera();
+      this.processarCodigo(input.value);
+      this.fechar();
       input.value = '';
     }
   },
-  
+
   toggleUSB() {
     this.usbAtivo = !this.usbAtivo;
-    app.mostrarToast(`Leitor USB ${this.usbAtivo ? 'ATIVADO' : 'DESATIVADO'}`, 'info');
-  },
-  
-  // Métodos públicos
-  abrir(callback) {
-    this.abrirCamera(callback);
-  },
-  
-  fechar() {
-    this.fecharCamera();
-  },
-  
-  usarManual() {
-    this.usarCodigoManual();
+    if (typeof app !== 'undefined') {
+      app.mostrarToast(`USB ${this.usbAtivo ? 'ON' : 'OFF'}`, 'info');
+    }
   }
 };
 
-// ========== INICIALIZAÇÃO AUTOMÁTICA ==========
-document.addEventListener('DOMContentLoaded', () => {
-  scanner.inicializarUSB();
-  scanner.inicializarAudio();
-  console.log('✅ Scanner inicializado - Câmera + USB + Bip Sonoro');
-});
+// Iniciar
+document.addEventListener('DOMContentLoaded', () => scanner.inicializar());
