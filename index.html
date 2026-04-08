@@ -42,26 +42,53 @@
     <main class="content" id="content"></main>
   </div>
   
-  <!-- Scanner Modal -->
-  <div class="scanner-modal" id="scannerModal">
-    <div class="scanner-container">
-      <div class="scanner-header">
-        <h3><i class="fas fa-barcode"></i> Leitor de Código de Barras</h3>
-        <button class="scanner-btn" onclick="scanner.fechar()">✕ Fechar</button>
-      </div>
-      <div class="scanner-video-container">
-        <video id="scanner-video"></video>
-        <div class="scanner-guide"></div>
-      </div>
-      <div class="scanner-result">
-        <span id="lastScanText">🔍 Posicione o código na área verde</span>
-      </div>
-      <div class="scanner-footer">
-        <input type="text" id="manualBarcode" placeholder="Ou digite o código">
-        <button class="scanner-btn primary" onclick="scanner.usarManual()">Usar</button>
+  <!-- Scanner Modal Atualizado -->
+<div class="scanner-modal" id="scannerModal">
+  <div class="scanner-container">
+    <div class="scanner-header">
+      <h3>
+        <i class="fas fa-barcode"></i> 
+        Scanner Inteligente
+        <span style="font-size: 0.8rem; opacity: 0.8; margin-left: 8px;">
+          📷 Câmera | 🔌 USB
+        </span>
+      </h3>
+      <div style="display: flex; gap: 8px;">
+        <button class="scanner-btn" onclick="scanner.toggleUSB()" title="Ativar/Desativar Leitor USB">
+          <i class="fas fa-usb"></i>
+        </button>
+        <button class="scanner-btn" onclick="scanner.fechar()">
+          <i class="fas fa-times"></i> Fechar
+        </button>
       </div>
     </div>
+    
+    <div class="scanner-video-container">
+      <video id="scanner-video"></video>
+      <div class="scanner-guide"></div>
+      <div style="position: absolute; bottom: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
+        <i class="fas fa-camera"></i> Câmera
+      </div>
+      <div style="position: absolute; bottom: 20px; right: 20px; color: #10b981; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
+        <i class="fas fa-check-circle"></i> Bip Ativo
+      </div>
+    </div>
+    
+    <div class="scanner-result" id="scannerResult">
+      <span id="lastScanText">
+        🔍 Aguardando código...<br>
+        <small>Use a câmera ou leitor USB</small>
+      </span>
+    </div>
+    
+    <div class="scanner-footer">
+      <input type="text" id="manualBarcode" placeholder="Ou digite o código manualmente">
+      <button class="scanner-btn primary" onclick="scanner.usarManual()">
+        <i class="fas fa-check"></i> Usar
+      </button>
+    </div>
   </div>
+</div>
 
   <!-- Scripts -->
   <script src="js/storage.js"></script>
