@@ -1,4 +1,7 @@
-// Scanner.js - Unificado para Câmera e Leitor USB com Bip
+// ============================================
+// Scanner.js - Unificado para Câmera e USB
+// Com Bip Sonoro Funcional e Design Responsivo
+// ============================================
 
 const scanner = {
   // Modo câmera
@@ -10,6 +13,9 @@ const scanner = {
   bufferUSB: '',
   timeoutUSB: null,
   usbAtivo: true,
+  
+  // Áudio
+  audioInicializado: false,
   
   // Configuração com TODOS os formatos
   hints: new Map([
@@ -31,18 +37,12 @@ const scanner = {
     [ZXing.DecodeHintType.TRY_HARDER, true]
   ]),
   
-  // ========== INICIALIZAÇÃO ==========
-  inicializar() {
-    this.inicializarUSB();
-    console.log('✅ Scanner unificado (Câmera + USB) inicializado!');
-  },
-  
-  // ========== MODO USB (BIPADORA) ==========
+  // ========== INICIALIZAÇÃO DO SCANNER USB ==========
   inicializarUSB() {
     document.addEventListener('keypress', (e) => {
       if (!this.usbAtivo) return;
       
-      // Ignorar se estiver digitando em um input (exceto se for campo de busca)
+      // Ignorar se estiver digitando em um input
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
@@ -63,7 +63,7 @@ const scanner = {
       // Acumula caracteres
       this.bufferUSB += e.key;
       
-      // Reset do timeout (scanner USB digita muito rápido)
+      // Reset do timeout
       clearTimeout(this.timeoutUSB);
       this.timeoutUSB = setTimeout(() => {
         if (this.bufferUSB.length > 5) {
@@ -84,12 +84,113 @@ const scanner = {
   
   processarCodigoUSB(codigo) {
     console.log('📟 Leitor USB:', codigo);
-    
-    // Tocar bip
     this.tocarBip();
-    
-    // Processar código
+    this.flashVerde();
     this.processarCodigo(codigo, 'USB');
+  },
+  
+  // ========== INICIALIZAR ÁUDIO (PARA MOBILE) ==========
+  inicializarAudio() {
+    const eventos = ['touchstart', 'click'];
+    
+    eventos.forEach(evento => {
+      document.addEventListener(evento, () => {
+        if (!this.audioInicializado) {
+          try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            ctx.resume();
+            this.audioInicializado = true;
+            console.log('✅ Áudio inicializado!');
+          } catch (e) {
+            console.log('ℹ️ Áudio será ativado na primeira interação');
+          }
+        }
+      }, { once: true });
+    });
+  },
+  
+  // ========== BIP SONORO ==========
+  tocarBip() {
+    // Método 1: Web Audio API (leve e funcional)
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      
+      if (audioContext.state === 'suspended') {
+        audioContext.resume();
+      }
+      
+      const now = audioContext.currentTime;
+      
+      // Primeiro bip (800Hz)
+      const osc1 = audioContext.createOscillator();
+      const gain1 = audioContext.createGain();
+      osc1.type = 'square';
+      osc1.frequency.value = 800;
+      gain1.gain.setValueAtTime(0.2, now);
+      gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      osc1.connect(gain1);
+      gain1.connect(audioContext.destination);
+      osc1.start(now);
+      osc1.stop(now + 0.1);
+      
+      // Segundo bip (1000Hz)
+      const osc2 = audioContext.createOscillator();
+      const gain2 = audioContext.createGain();
+      osc2.type = 'square';
+      osc2.frequency.value = 1000;
+      gain2.gain.setValueAtTime(0.15, now + 0.12);
+      gain2.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+      osc2.connect(gain2);
+      gain2.connect(audioContext.destination);
+      osc2.start(now + 0.12);
+      osc2.stop(now + 0.22);
+      
+      return;
+      
+    } catch (e) {
+      console.log('Web Audio falhou, usando fallback');
+    }
+    
+    // Método 2: Fallback simples
+    try {
+      const audio = new Audio();
+      audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgIGBgYF/f39/f3+AgICBgYGBgoKCg4ODhISEhYWFhoaGh4eHiIiIiYmJioqKi4uLjIyMjY2Njo6Oj4+PkJCQkZGRkpKSk5OTlJSUlZWVlpaWl5eXmJiYmZmZmpqam5ubnJycnZ2dnp6en5+foKCgoaGhoqKio6OjpKSkpaWlpqamp6enqKioqampqqqqq6urrKysra2trq6ur6+vsLCwsbGxsrKys7OztLS0tbW1tra2t7e3uLi4ubm5urq6u7u7vLy8vb29vr6+v7+/wMDAwcHBwsLCw8PDxMTExcXFxsbGx8fHyMjIycnJysrKy8vLzMzMzc3Nzs7Oz8/P0NDQ0dHR0tLS09PT1NTU1dXV1tbW19fX2NjY2dnZ2tra29vb3Nzc3d3d3t7e39/f4ODg4eHh4uLi4+Pj5OTk5eXl5ubm5+fn6Ojo6enp6urq6+vr7Ozs7e3t7u7u7+/v8PDw8fHx8vLy8/Pz9PT09fX19vb29/f3+Pj4+fn5+vr6+/v7/Pz8/f39/v7+////AAA=';
+      audio.volume = 0.3;
+      audio.play();
+    } catch (e) {
+      // Silêncio
+    }
+  },
+  
+  // ========== FEEDBACK VISUAL ==========
+  flashVerde() {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(16, 185, 129, 0.3);
+      z-index: 99999;
+      pointer-events: none;
+      animation: flash 0.3s ease;
+    `;
+    
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes flash {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+      }
+    `;
+    document.head.appendChild(style);
+    document.body.appendChild(overlay);
+    
+    setTimeout(() => {
+      overlay.remove();
+      style.remove();
+    }, 300);
   },
   
   // ========== MODO CÂMERA ==========
@@ -127,8 +228,11 @@ const scanner = {
             // Tocar bip
             this.tocarBip();
             
-            // Feedback visual na tela
+            // Feedback visual
             this.flashVerde();
+            
+            // Vibração
+            if (navigator.vibrate) navigator.vibrate(50);
             
             // Mostrar formato detectado
             const formatoNome = this.getFormatoNome(formato);
@@ -136,9 +240,6 @@ const scanner = {
               ✅ ${codigo}<br>
               <small>Formato: ${formatoNome}</small>
             `;
-            
-            // Vibração
-            if (navigator.vibrate) navigator.vibrate(50);
             
             // Executar callback
             if (this.callback) {
@@ -183,7 +284,7 @@ const scanner = {
   processarCodigo(codigo, origem = 'Desconhecido') {
     console.log(`📟 Código detectado (${origem}):`, codigo);
     
-    // Atualiza campos de busca se existirem
+    // Atualiza campos de busca
     const buscaVenda = document.getElementById('buscaVenda');
     const buscaEstoque = document.getElementById('buscaEstoque');
     const codigoInput = document.getElementById('codigoInput');
@@ -209,18 +310,18 @@ const scanner = {
       if (produto) {
         if (produto.quantidade > 0) {
           vendas.adicionar(produto.id);
-          app.mostrarToast(`✅ ${produto.nome} adicionado ao carrinho`, 'success');
+          app.mostrarToast(`✅ ${produto.nome} adicionado`, 'success');
         } else {
           app.mostrarToast(`❌ ${produto.nome} sem estoque!`, 'error');
         }
       } else {
-        app.mostrarToast(`❌ Produto não cadastrado: ${codigo}`, 'error');
+        app.mostrarToast(`❌ Produto não cadastrado`, 'error');
       }
       
     } else if (app.paginaAtual === 'estoque') {
       const produto = storage.produtos.find(p => p.codigo === codigo);
       if (produto) {
-        app.mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} | Estoque: ${produto.quantidade}`, 'info');
+        app.mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)} | Estoque: ${produto.quantidade}`);
       } else {
         app.mostrarToast(`Produto não encontrado`, 'error');
       }
@@ -229,99 +330,6 @@ const scanner = {
   
   handlePadrao(codigo) {
     this.processarCodigo(codigo, 'Câmera');
-  },
-  
-  // ========== BIP SONORO ==========
-  tocarBip() {
-  // Método 1: Web Audio API (FUNCIONA PERFEITO E É LEVE)
-  try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    
-    // Garantir que o contexto está ativo
-    if (audioContext.state === 'suspended') {
-      audioContext.resume();
-    }
-    
-    const now = audioContext.currentTime;
-    
-    // Bip agudo (800Hz)
-    const osc = audioContext.createOscillator();
-    const gain = audioContext.createGain();
-    
-    osc.type = 'square'; // Som de "bip" de mercado
-    osc.frequency.value = 800;
-    
-    gain.gain.setValueAtTime(0.2, now);
-    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-    
-    osc.connect(gain);
-    gain.connect(audioContext.destination);
-    
-    osc.start(now);
-    osc.stop(now + 0.1);
-    
-    return; // Sucesso!
-    
-  } catch (e) {
-    // Se Web Audio falhar, usa um beep simples via HTML5
-    console.log('Usando fallback de áudio');
-  }
-  
-  // Método 2: Fallback super simples (só se o principal falhar)
-  try {
-    const audio = new Audio();
-    // Beep ultra curto em Base64 (bem pequeno)
-    audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgIGBgYF/f39/f3+AgICBgYGBgoKCg4ODhISEhYWFhoaGh4eHiIiIiYmJioqKi4uLjIyMjY2Njo6Oj4+PkJCQkZGRkpKSk5OTlJSUlZWVlpaWl5eXmJiYmZmZmpqam5ubnJycnZ2dnp6en5+foKCgoaGhoqKio6OjpKSkpaWlpqamp6enqKioqampqqqqq6urrKysra2trq6ur6+vsLCwsbGxsrKys7OztLS0tbW1tra2t7e3uLi4ubm5urq6u7u7vLy8vb29vr6+v7+/wMDAwcHBwsLCw8PDxMTExcXFxsbGx8fHyMjIycnJysrKy8vLzMzMzc3Nzs7Oz8/P0NDQ0dHR0tLS09PT1NTU1dXV1tbW19fX2NjY2dnZ2tra29vb3Nzc3d3d3t7e39/f4ODg4eHh4uLi4+Pj5OTk5eXl5ubm5+fn6Ojo6enp6urq6+vr7Ozs7e3t7u7u7+/v8PDw8fHx8vLy8/Pz9PT09fX19vb29/f3+Pj4+fn5+vr6+/v7/Pz8/f39/v7+////AAA=';
-    audio.volume = 0.3;
-    audio.play();
-  } catch (e) {
-    // Silêncio total se nada funcionar
-  }
-},
-  
-  tocarBipFallback() {
-    try {
-      // Bip usando elemento de áudio
-      const audio = new Audio();
-      audio.src = 'data:audio/wav;base64,UklGRlwAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YVoAAACAgYGBgYCAgICAf39/f39/f39/f39/f3+AgICBgYGBgoKCg4ODhISEhYWFhoaGh4eHiIiIiYmJioqKi4uLjIyMjY2Njo6Oj4+PkJCQkZGRkpKSk5OTlJSUlZWVlpaWl5eXmJiYmZmZmpqam5ubnJycnZ2dnp6en5+foKCgoaGhoqKio6OjpKSkpaWlpqamp6enqKioqampqqqqq6urrKysra2trq6ur6+vsLCwsbGxsrKys7OztLS0tbW1tra2t7e3uLi4ubm5urq6u7u7vLy8vb29vr6+v7+/wMDAwcHBwsLCw8PDxMTExcXFxsbGx8fHyMjIycnJysrKy8vLzMzMzc3Nzs7Oz8/P0NDQ0dHR0tLS09PT1NTU1dXV1tbW19fX2NjY2dnZ2tra29vb3Nzc3d3d3t7e39/f4ODg4eHh4uLi4+Pj5OTk5eXl5ubm5+fn6Ojo6enp6urq6+vr7Ozs7e3t7u7u7+/v8PDw8fHx8vLy8/Pz9PT09fX19vb29/f3+Pj4+fn5+vr6+/v7/Pz8/f39/v7+////AAA=';
-      audio.volume = 0.5;
-      audio.play().catch(() => {});
-    } catch (e) {
-      console.log('Bip não suportado');
-    }
-  },
-  
-  // ========== FEEDBACK VISUAL ==========
-  flashVerde() {
-    // Flash na tela quando detecta
-    const overlay = document.createElement('div');
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(16, 185, 129, 0.3);
-      z-index: 99999;
-      pointer-events: none;
-      animation: flash 0.3s ease;
-    `;
-    
-    // Adicionar animação
-    const style = document.createElement('style');
-    style.textContent = `
-      @keyframes flash {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
-      }
-    `;
-    document.head.appendChild(style);
-    document.body.appendChild(overlay);
-    
-    setTimeout(() => {
-      overlay.remove();
-      style.remove();
-    }, 300);
   },
   
   // ========== UTILITÁRIOS ==========
@@ -350,6 +358,7 @@ const scanner = {
     const codigo = input.value.trim();
     if (codigo) {
       this.tocarBip();
+      this.flashVerde();
       if (this.callback) {
         this.callback(codigo);
       } else {
@@ -365,7 +374,7 @@ const scanner = {
     app.mostrarToast(`Leitor USB ${this.usbAtivo ? 'ATIVADO' : 'DESATIVADO'}`, 'info');
   },
   
-  // Método único para abrir scanner
+  // Métodos públicos
   abrir(callback) {
     this.abrirCamera(callback);
   },
@@ -379,7 +388,9 @@ const scanner = {
   }
 };
 
-// Inicializar scanner
+// ========== INICIALIZAÇÃO AUTOMÁTICA ==========
 document.addEventListener('DOMContentLoaded', () => {
-  scanner.inicializar();
+  scanner.inicializarUSB();
+  scanner.inicializarAudio();
+  console.log('✅ Scanner inicializado - Câmera + USB + Bip Sonoro');
 });
