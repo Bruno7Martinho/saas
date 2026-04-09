@@ -2,9 +2,15 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Conveniência · Sistema de Estoque</title>
+  
+  <!-- Bibliotecas -->
   <script src="https://unpkg.com/@zxing/library@latest/umd/index.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
+  <!-- Estilos -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
@@ -15,93 +21,137 @@
       <div class="logo">
         <i class="fas fa-store"></i>
         <span>Minha Conveniência</span>
-        <span>a01</span>
       </div>
+      
       <div class="stats-mini">
         <span><i class="fas fa-box"></i> <span id="totalProdutos">0</span></span>
         <span><i class="fas fa-shopping-cart"></i> <span id="vendasHoje">0</span></span>
       </div>
-      <button class="btn btn-primary" onclick="scanner.abrir()">
-        <i class="fas fa-barcode"></i> Scanner
-      </button>
+      
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="scanner.abrir()">
+          <i class="fas fa-barcode"></i> Scanner
+        </button>
+      </div>
     </header>
     
     <!-- Navegação -->
     <nav class="nav">
-  <button class="nav-btn" data-page="estoque" onclick="app.mudarPagina('estoque')">
-    <i class="fas fa-boxes"></i> Estoque
-  </button>
-  <button class="nav-btn" data-page="vendas" onclick="app.mudarPagina('vendas')">
-    <i class="fas fa-shopping-cart"></i> Vendas
-  </button>
-  <button class="nav-btn" data-page="relatorios" onclick="app.mudarPagina('relatorios')">
-    <i class="fas fa-chart-bar"></i> Relatórios
-  </button>
-  <button class="nav-btn" data-page="fornecedores" onclick="app.mudarPagina('fornecedores')">
-    <i class="fas fa-truck"></i> Fornecedores
-  </button>
-  <button class="nav-btn" data-page="configuracoes" onclick="app.mudarPagina('configuracoes')">
-    <i class="fas fa-cog"></i> Configurações
-  </button>
-</nav>
+      <button class="nav-btn active" data-page="estoque" onclick="app.mudarPagina('estoque')">
+        <i class="fas fa-boxes"></i> <span>Estoque</span>
+      </button>
+      <button class="nav-btn" data-page="vendas" onclick="app.mudarPagina('vendas')">
+        <i class="fas fa-shopping-cart"></i> <span>Vendas</span>
+      </button>
+      <button class="nav-btn" data-page="cadastro" onclick="app.mudarPagina('cadastro')">
+        <i class="fas fa-plus-circle"></i> <span>Cadastrar</span>
+      </button>
+      <button class="nav-btn" data-page="relatorios" onclick="app.mudarPagina('relatorios')">
+        <i class="fas fa-chart-bar"></i> <span>Relatórios</span>
+      </button>
+      <button class="nav-btn" data-page="fornecedores" onclick="app.mudarPagina('fornecedores')">
+        <i class="fas fa-truck"></i> <span>Fornecedores</span>
+      </button>
+      <button class="nav-btn" data-page="configuracoes" onclick="app.mudarPagina('configuracoes')">
+        <i class="fas fa-cog"></i> <span>Configurações</span>
+      </button>
+    </nav>
+    
+ 
     
     <!-- Conteúdo Dinâmico -->
     <main class="content" id="content"></main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Conveniência SaaS</h4>
+          <p>Sistema completo de gestão</p>
+        </div>
+        <div class="footer-section">
+          <h4>Atalhos</h4>
+          <p><kbd>Alt</kbd> + <kbd>E</kbd> Estoque</p>
+          <p><kbd>Alt</kbd> + <kbd>V</kbd> Vendas</p>
+          <p><kbd>Alt</kbd> + <kbd>S</kbd> Scanner</p>
+        </div>
+        <div class="footer-section">
+          <p>© 2026 v2.0.0</p>
+          <p class="update-time">Atualizado: <span id="lastUpdate"></span></p>
+        </div>
+      </div>
+    </footer>
   </div>
   
-  <!-- Scanner Modal Atualizado -->
-<div class="scanner-modal" id="scannerModal">
-  <div class="scanner-container">
-    <div class="scanner-header">
-      <h3>
-        <i class="fas fa-barcode"></i> 
-        Scanner Inteligente
-        <span style="font-size: 0.8rem; opacity: 0.8; margin-left: 8px;">
-          📷 Câmera | 🔌 USB
+  <!-- Scanner Modal -->
+  <div class="scanner-modal" id="scannerModal">
+    <div class="scanner-container">
+      <div class="scanner-header">
+        <h3>
+          <i class="fas fa-barcode"></i> 
+          Scanner Inteligente
+          <span style="font-size: 0.8rem; opacity: 0.8; margin-left: 8px;">
+            📷 Câmera | 🔌 USB
+          </span>
+        </h3>
+        <div style="display: flex; gap: 8px;">
+          <button class="scanner-btn" onclick="scanner.toggleUSB()" title="Ativar/Desativar Leitor USB">
+            <i class="fas fa-usb"></i>
+          </button>
+          <button class="scanner-btn" onclick="scanner.fechar()">
+            <i class="fas fa-times"></i> Fechar
+          </button>
+        </div>
+      </div>
+      
+      <div class="scanner-video-container">
+        <video id="scanner-video"></video>
+        <div class="scanner-guide"></div>
+        <div style="position: absolute; bottom: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
+          <i class="fas fa-camera"></i> Câmera
+        </div>
+        <div style="position: absolute; bottom: 20px; right: 20px; color: #10b981; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
+          <i class="fas fa-volume-up"></i> Bip Ativo
+        </div>
+      </div>
+      
+      <div class="scanner-result">
+        <span id="lastScanText">
+          🔍 Aguardando código...<br>
+          <small>Use a câmera ou leitor USB</small>
         </span>
-      </h3>
-      <div style="display: flex; gap: 8px;">
-        <button class="scanner-btn" onclick="scanner.toggleUSB()" title="Ativar/Desativar Leitor USB">
-          <i class="fas fa-usb"></i>
+      </div>
+      
+      <div class="scanner-footer">
+        <input type="text" id="manualBarcode" placeholder="Ou digite o código manualmente">
+        <button class="scanner-btn primary" onclick="scanner.usarManual()">
+          <i class="fas fa-check"></i> Usar
         </button>
-        <button class="scanner-btn" onclick="scanner.fechar()">
-          <i class="fas fa-times"></i> Fechar
-        </button>
       </div>
-    </div>
-    
-    <div class="scanner-video-container">
-      <video id="scanner-video"></video>
-      <div class="scanner-guide"></div>
-      <div style="position: absolute; bottom: 20px; left: 20px; color: white; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
-        <i class="fas fa-camera"></i> Câmera
-      </div>
-      <div style="position: absolute; bottom: 20px; right: 20px; color: #10b981; background: rgba(0,0,0,0.7); padding: 8px 16px; border-radius: 20px; font-size: 0.9rem;">
-        <i class="fas fa-check-circle"></i> Bip Ativo
-      </div>
-    </div>
-    
-    <div class="scanner-result" id="scannerResult">
-      <span id="lastScanText">
-        🔍 Aguardando código...<br>
-        <small>Use a câmera ou leitor USB</small>
-      </span>
-    </div>
-    
-    <div class="scanner-footer">
-      <input type="text" id="manualBarcode" placeholder="Ou digite o código manualmente">
-      <button class="scanner-btn primary" onclick="scanner.usarManual()">
-        <i class="fas fa-check"></i> Usar
-      </button>
     </div>
   </div>
-</div>
 
-  <!-- Scripts -->
+  <!-- Toast Container -->
+  <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+  <!-- ========== SCRIPTS NA ORDEM CORRETA ========== -->
+  
+  <!-- 1. Storage (dados) -->
   <script src="js/storage.js"></script>
+  
+  <!-- 2. Scanner -->
   <script src="js/scanner.js"></script>
+  
+  <!-- 3. Módulos principais -->
   <script src="js/estoque.js"></script>
   <script src="js/vendas.js"></script>
+  
+  <!-- 4. Módulos adicionais (crie estes arquivos) -->
+  <script src="js/fornecedores.js"></script>
+  <script src="js/relatorios.js"></script>
+  <script src="js/configuracoes.js"></script>
+  
+  <!-- 5. App (sempre por último) -->
   <script src="js/app.js"></script>
 </body>
 </html>
