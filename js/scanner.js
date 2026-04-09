@@ -1,5 +1,5 @@
 // ============================================
-// Scanner.js - Versão OTIMIZADA (RÁPIDA)
+// Scanner.js - Versão FUNCIONAL e ESTÁVEL
 // Câmera + USB + Bip Sonoro
 // ============================================
 
@@ -14,22 +14,27 @@ const scanner = {
   timeoutUSB: null,
   usbAtivo: true,
   
-  // Cache de áudio para performance
+  // Áudio
   audioContext: null,
 
   // ========== INICIALIZAR ==========
   inicializar() {
     this.inicializarUSB();
     this.prepararAudio();
-    console.log('✅ Scanner rápido inicializado');
+    console.log('✅ Scanner pronto!');
   },
 
-  // ========== SCANNER USB (OTIMIZADO) ==========
+  // ========== SCANNER USB ==========
   inicializarUSB() {
     document.addEventListener('keypress', (e) => {
       if (!this.usbAtivo) return;
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
+      // Não processar se estiver digitando em um campo
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+      
+      // Enter = fim do código
       if (e.key === 'Enter') {
         e.preventDefault();
         if (this.bufferUSB.length > 3) {
@@ -47,18 +52,19 @@ const scanner = {
           this.processarCodigo(this.bufferUSB);
         }
         this.bufferUSB = '';
-      }, 30); // Mais rápido
+      }, 50);
     });
   },
 
-  // ========== ÁUDIO OTIMIZADO ==========
+  // ========== ÁUDIO ==========
   prepararAudio() {
-    // Pré-criar contexto de áudio
     const ativar = () => {
       try {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.audioContext.resume();
-      } catch (e) {}
+      } catch (e) {
+        console.log('Áudio não suportado');
+      }
     };
     
     document.addEventListener('touchstart', ativar, { once: true });
@@ -66,17 +72,15 @@ const scanner = {
   },
 
   tocarBip() {
-    if (!this.audioContext) {
-      try {
-        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) {
-        return;
-      }
-    }
-    
     try {
+      if (!this.audioContext) {
+        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
       const ctx = this.audioContext;
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
       
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -89,61 +93,103 @@ const scanner = {
       gain.connect(ctx.destination);
       
       osc.start();
-      osc.stop(ctx.currentTime + 0.08); // Mais curto
-    } catch (e) {}
+      osc.stop(ctx.currentTime + 0.1);
+    } catch (e) {
+      console.log('Bip falhou');
+    }
   },
 
-  // ========== CÂMERA OTIMIZADA ==========
-  abrir(callback) {
+  // ========== CÂMERA - FUNCIONANDO ==========
+  async abrir(callback) {
     this.callback = callback || this.processarCodigo.bind(this);
     
     const modal = document.getElementById('scannerModal');
-    if (!modal) return;
+    if (!modal) {
+      console.error('Modal não encontrado!');
+      return;
+    }
     
     modal.style.display = 'block';
     
-    // Configuração mais leve
-    const hints = new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-      ZXing.BarcodeFormat.EAN_13,
-      ZXing.BarcodeFormat.EAN_8,
-      ZXing.BarcodeFormat.UPC_A,
-      ZXing.BarcodeFormat.CODE_128,
-      ZXing.BarcodeFormat.QR_CODE
-    ]);
-    
-    // Usar câmera traseira diretamente
-    ZXing.BrowserMultiFormatReader.decodeFromVideoDevice(
-      null,
-      'scanner-video',
-      (result, err) => {
-        if (result) {
-          const codigo = result.text;
-          
-          // Feedback imediato
-          this.tocarBip();
-          document.getElementById('lastScanText').textContent = `✅ ${codigo}`;
-          
-          if (this.callback) this.callback(codigo);
-          
-          // Fechar rápido
-          setTimeout(() => this.fechar(), 300);
+    try {
+      // Criar reader
+      this.reader = new ZXing.BrowserMultiFormatReader();
+      
+      // Listar câmeras
+      const devices = await this.reader.listVideoInputDevices();
+      
+      if (devices.length === 0) {
+        throw new Error('Nenhuma câmera encontrada');
+      }
+      
+      // Preferir câmera traseira
+      const device = devices.find(d => 
+        d.label.toLowerCase().includes('back') || 
+        d.label.toLowerCase().includes('traseira') ||
+        d.label.toLowerCase().includes('environment')
+      ) || devices[0];
+      
+      console.log('📷 Usando câmera:', device.label);
+      
+      this.ativo = true;
+      
+      // Iniciar decodificação
+      await this.reader.decodeFromVideoDevice(
+        device.deviceId,
+        'scanner-video',
+        (resultado, erro) => {
+          if (resultado && this.ativo) {
+            const codigo = resultado.text;
+            
+            // Bip
+            this.tocarBip();
+            
+            // Atualizar texto
+            const lastScan = document.getElementById('lastScanText');
+            if (lastScan) {
+              lastScan.textContent = `✅ ${codigo}`;
+            }
+            
+            // Callback
+            if (this.callback) {
+              this.callback(codigo);
+            }
+            
+            // Fechar
+            setTimeout(() => this.fechar(), 500);
+          }
         }
-      },
-      hints
-    ).catch(err => {
-      console.error('Erro câmera:', err);
+      );
+      
+      const lastScan = document.getElementById('lastScanText');
+      if (lastScan) {
+        lastScan.textContent = '🔍 Escaneando...';
+      }
+      
+    } catch (error) {
+      console.error('Erro na câmera:', error);
+      
+      if (typeof app !== 'undefined' && app.mostrarToast) {
+        app.mostrarToast('Erro ao acessar câmera', 'error');
+      }
+      
       this.fechar();
-    });
-    
-    document.getElementById('lastScanText').textContent = '🔍 Escaneando...';
+    }
   },
 
   fechar() {
+    this.ativo = false;
+    
     const modal = document.getElementById('scannerModal');
     if (modal) modal.style.display = 'none';
     
-    // Limpar recursos
+    // Parar câmera
+    if (this.reader) {
+      this.reader.reset();
+      this.reader = null;
+    }
+    
+    // Limpar video
     const video = document.getElementById('scanner-video');
     if (video && video.srcObject) {
       const tracks = video.srcObject.getTracks();
@@ -152,33 +198,46 @@ const scanner = {
     }
   },
 
-  // ========== PROCESSAR CÓDIGO (RÁPIDO) ==========
+  // ========== PROCESSAR CÓDIGO ==========
   processarCodigo(codigo) {
-    // Remover caracteres não numéricos se for EAN/UPC
-    codigo = codigo.replace(/[^0-9]/g, '');
+    console.log('📟 Código detectado:', codigo);
     
-    // Preencher campos rapidamente
+    // Preencher campos
     const inputCodigo = document.getElementById('codigoInput');
     const buscaVenda = document.getElementById('buscaVenda');
+    const buscaEstoque = document.getElementById('buscaEstoque');
     
     if (inputCodigo) inputCodigo.value = codigo;
     if (buscaVenda) {
       buscaVenda.value = codigo;
       buscaVenda.dispatchEvent(new Event('input', { bubbles: true }));
     }
+    if (buscaEstoque) {
+      buscaEstoque.value = codigo;
+      buscaEstoque.dispatchEvent(new Event('input', { bubbles: true }));
+    }
     
-    // Ações por página (verificação rápida)
-    if (typeof app !== 'undefined' && app.paginaAtual === 'vendas') {
-      const produto = storage.produtos.find(p => p.codigo === codigo);
-      if (produto) {
-        if (produto.quantidade > 0) {
-          vendas.adicionar(produto.id);
-          app.mostrarToast(`✅ ${produto.nome}`, 'success');
+    // Ações por página
+    if (typeof app !== 'undefined' && app.paginaAtual) {
+      if (app.paginaAtual === 'vendas') {
+        const produto = storage.produtos.find(p => p.codigo === codigo);
+        if (produto) {
+          if (produto.quantidade > 0) {
+            vendas.adicionar(produto.id);
+            app.mostrarToast(`✅ ${produto.nome}`, 'success');
+          } else {
+            app.mostrarToast(`❌ Sem estoque`, 'error');
+          }
         } else {
-          app.mostrarToast(`❌ Sem estoque`, 'error');
+          app.mostrarToast(`❌ Não cadastrado`, 'error');
+        }
+      } else if (app.paginaAtual === 'estoque') {
+        const produto = storage.produtos.find(p => p.codigo === codigo);
+        if (produto) {
+          app.mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)}`, 'info');
         }
       } else {
-        app.mostrarToast(`❌ Não encontrado`, 'error');
+        app.mostrarToast(`Código: ${codigo}`, 'info');
       }
     }
   },
@@ -196,11 +255,13 @@ const scanner = {
 
   toggleUSB() {
     this.usbAtivo = !this.usbAtivo;
-    if (typeof app !== 'undefined') {
+    if (typeof app !== 'undefined' && app.mostrarToast) {
       app.mostrarToast(`USB ${this.usbAtivo ? 'ON' : 'OFF'}`, 'info');
     }
   }
 };
 
-// Iniciar
-document.addEventListener('DOMContentLoaded', () => scanner.inicializar());
+// Iniciar quando a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+  scanner.inicializar();
+});
