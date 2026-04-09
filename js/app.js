@@ -97,7 +97,10 @@ const app = {
           fornecedores.renderizar();
         } else if (pagina === 'configuracoes' && typeof configuracoes !== 'undefined') {
           configuracoes.renderizar();
-        } else {
+        } else if (pagina === 'historico'){
+        historico.renderizar();
+        } 
+        else {
           this.renderizarEmBreve(pagina);
         }
       } catch (error) {
