@@ -1,4 +1,5 @@
-// App.js - Inicialização e navegação (Versão CORRIGIDA)
+// App.js - Inicialização e navegação (Versão CORRIGIDA com Sidebar Funcional)
+
 const app = {
   paginaAtual: 'estoque',
   
@@ -8,6 +9,7 @@ const app = {
     this.carregarTema();
     this.atualizarHeader();
     this.mudarPagina('estoque');
+    console.log('✅ App inicializado!');
   },
   
   carregarTema() {
@@ -42,6 +44,11 @@ const app = {
             this.mudarPagina('vendas');
             this.mostrarToast('🛒 Vendas', 'info');
             break;
+          case 'h':
+            e.preventDefault();
+            this.mudarPagina('historico');
+            this.mostrarToast('📜 Histórico', 'info');
+            break;
           case 'r':
             e.preventDefault();
             this.mudarPagina('relatorios');
@@ -62,75 +69,140 @@ const app = {
       if (e.key === 'Escape') {
         if (typeof scanner !== 'undefined') scanner.fechar();
         document.querySelectorAll('.modal-overlay').forEach(m => m.remove());
+        this.closeSidebar();
       }
     });
   },
   
-  mudarPagina(pagina) {
-    const content = document.getElementById('content');
+  // ========== CONTROLE DA SIDEBAR ==========
+  toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
     
-    content.style.opacity = '0';
-    content.style.transform = 'translateY(10px)';
-    
-    setTimeout(() => {
-      this.paginaAtual = pagina;
+    if (sidebar) {
+      sidebar.classList.toggle('open');
       
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.page === pagina) btn.classList.add('active');
-      });
-      
-      // Atualizar breadcrumb
-      this.atualizarBreadcrumb(pagina);
-      
-      // Renderizar página com verificação de existência
-      try {
-        if (pagina === 'estoque' && typeof estoque !== 'undefined') {
-          estoque.renderizar();
-        } else if (pagina === 'vendas' && typeof vendas !== 'undefined') {
-          vendas.renderizar();
-        } else if (pagina === 'cadastro') {
-          this.renderizarCadastro();
-        } else if (pagina === 'relatorios' && typeof relatorios !== 'undefined') {
-          relatorios.renderizar();
-        } else if (pagina === 'fornecedores' && typeof fornecedores !== 'undefined') {
-          fornecedores.renderizar();
-        } else if (pagina === 'configuracoes' && typeof configuracoes !== 'undefined') {
-          configuracoes.renderizar();
-        } else if (pagina === 'historico'){
-        historico.renderizar();
-        } 
-        else {
-          this.renderizarEmBreve(pagina);
-        }
-      } catch (error) {
-        console.error('Erro ao renderizar página:', error);
-        this.renderizarEmBreve(pagina);
+      if (sidebar.classList.contains('open')) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
       }
-      
-      content.style.opacity = '1';
-      content.style.transform = 'translateY(0)';
-      
-      localStorage.setItem('ultimaPagina', pagina);
-    }, 150);
+    } else {
+      console.error('❌ Sidebar não encontrada!');
+    }
   },
   
-  atualizarBreadcrumb(pagina) {
-    const breadcrumb = document.getElementById('breadcrumb');
-    if (!breadcrumb) return;
+  closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  },
+  
+  mudarPagina(pagina) {
+    console.log('🔄 Mudando para página:', pagina);
     
-    const nomes = {
-      estoque: 'Estoque',
-      vendas: 'Vendas',
-      cadastro: 'Cadastrar Produto',
-      relatorios: 'Relatórios',
-      fornecedores: 'Fornecedores',
-      configuracoes: 'Configurações'
-    };
+    // Fechar sidebar no mobile
+    if (window.innerWidth <= 768) {
+      this.closeSidebar();
+    }
     
-    breadcrumb.innerHTML = `
-      <i class="fas fa-home"></i> 
-      <span>${nomes[pagina] || pagina}</span>
+    const content = document.getElementById('content');
+    if (!content) {
+      console.error('❌ Elemento #content não encontrado!');
+      return;
+    }
+    
+    // Atualizar botões ativos na sidebar
+    document.querySelectorAll('.sidebar-btn').forEach(btn => {
+      btn.classList.remove('active');
+      if (btn.dataset.page === pagina) {
+        btn.classList.add('active');
+      }
+    });
+    
+    // Guardar página atual
+    this.paginaAtual = pagina;
+    
+    // Renderizar a página solicitada
+    try {
+      if (pagina === 'estoque') {
+        if (typeof estoque !== 'undefined') {
+          console.log('✅ Renderizando Estoque');
+          estoque.renderizar();
+        } else {
+          console.error('❌ Módulo estoque não encontrado');
+          this.renderizarErro('Módulo Estoque não carregado');
+        }
+      } 
+      else if (pagina === 'vendas') {
+        if (typeof vendas !== 'undefined') {
+          console.log('✅ Renderizando Vendas');
+          vendas.renderizar();
+        } else {
+          console.error('❌ Módulo vendas não encontrado');
+          this.renderizarErro('Módulo Vendas não carregado');
+        }
+      } 
+      else if (pagina === 'cadastro') {
+        console.log('✅ Renderizando Cadastro');
+        this.renderizarCadastro();
+      } 
+      else if (pagina === 'historico') {
+        if (typeof historico !== 'undefined') {
+          console.log('✅ Renderizando Histórico');
+          historico.renderizar();
+        } else {
+          console.error('❌ Módulo historico não encontrado');
+          this.renderizarErro('Módulo Histórico não carregado');
+        }
+      } 
+      else if (pagina === 'relatorios') {
+        if (typeof relatorios !== 'undefined') {
+          console.log('✅ Renderizando Relatórios');
+          relatorios.renderizar();
+        } else {
+          this.renderizarEmBreve('Relatórios');
+        }
+      } 
+      else if (pagina === 'fornecedores') {
+        if (typeof fornecedores !== 'undefined') {
+          console.log('✅ Renderizando Fornecedores');
+          fornecedores.renderizar();
+        } else {
+          this.renderizarEmBreve('Fornecedores');
+        }
+      } 
+      else if (pagina === 'configuracoes') {
+        if (typeof configuracoes !== 'undefined') {
+          console.log('✅ Renderizando Configurações');
+          configuracoes.renderizar();
+        } else {
+          this.renderizarEmBreve('Configurações');
+        }
+      } 
+      else {
+        console.warn('⚠️ Página desconhecida:', pagina);
+        this.renderizarEmBreve(pagina);
+      }
+    } catch (error) {
+      console.error('❌ Erro ao renderizar página:', error);
+      this.renderizarErro(error.message);
+    }
+    
+    localStorage.setItem('ultimaPagina', pagina);
+  },
+  
+  renderizarErro(mensagem) {
+    document.getElementById('content').innerHTML = `
+      <div class="card" style="text-align: center; padding: 60px 20px;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #dc2626; margin-bottom: 24px;"></i>
+        <h2 style="margin-bottom: 16px;">Erro ao carregar</h2>
+        <p style="color: #6b7280; margin-bottom: 24px;">${mensagem}</p>
+        <button class="btn btn-primary" onclick="app.mudarPagina('estoque')">
+          <i class="fas fa-arrow-left"></i> Voltar para Estoque
+        </button>
+      </div>
     `;
   },
   
@@ -154,11 +226,10 @@ const app = {
   },
   
   renderizarCadastro() {
-    // Verificar se fornecedores existe, se não, criar array vazio
     const fornecedoresLista = (typeof fornecedores !== 'undefined' && fornecedores.lista) ? fornecedores.lista : [];
     
     document.getElementById('content').innerHTML = `
-      <div class="card" style="max-width: 600px;">
+      <div class="card" style="max-width: 600px; margin: 0 auto;">
         <div class="flex-between mb-4">
           <h2><i class="fas fa-plus-circle"></i> Cadastrar Produto</h2>
           <button class="btn btn-outline btn-sm" onclick="app.mudarPagina('estoque')">
@@ -278,8 +349,13 @@ const app = {
   },
   
   mostrarToast(mensagem, tipo = 'info') {
-    const container = document.getElementById('toast-container');
-    if (!container) return;
+    let container = document.getElementById('toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toast-container';
+      container.style.cssText = 'position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 10px;';
+      document.body.appendChild(container);
+    }
     
     const toast = document.createElement('div');
     const cores = {
@@ -306,7 +382,6 @@ const app = {
       align-items: center;
       gap: 12px;
       min-width: 280px;
-      margin-bottom: 10px;
       animation: slideIn 0.3s ease;
     `;
     
@@ -327,7 +402,7 @@ const app = {
   }
 };
 
-// Estilos para animação
+// ========== INICIALIZAÇÃO ==========
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
@@ -346,8 +421,17 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
+// Fechar sidebar ao redimensionar para desktop
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 768) {
+    app.closeSidebar();
+    document.body.style.overflow = '';
+  }
+});
+
 // Iniciar aplicação
 document.addEventListener('DOMContentLoaded', () => {
+  console.log('🚀 DOM Carregado - Iniciando App...');
   app.inicializar();
   
   const ultimaPagina = localStorage.getItem('ultimaPagina');
@@ -356,9 +440,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Expor app globalmente
+window.app = app;
 
-function verificarConexao() {
-  // Criar uma div de resultado
+// Função de teste de conexão (útil para debug)
+window.verificarConexao = function() {
   const resultado = document.createElement('div');
   resultado.style.cssText = `
     position: fixed;
@@ -378,38 +464,43 @@ function verificarConexao() {
   resultado.innerHTML = '<h3>🔍 Testando conexão...</h3>';
   document.body.appendChild(resultado);
   
-  // Testar conexão
-  db.buscarProdutos()
-    .then(produtos => {
-      if (produtos.length > 0) {
-        let html = '<h3 style="color: #059669;">✅ CONEXÃO FUNCIONANDO!</h3>';
-        html += `<p><strong>${produtos.length} produtos encontrados:</strong></p>`;
-        html += '<ul style="text-align: left;">';
-        produtos.forEach(p => {
-          html += `<li>${p.nome} - R$ ${p.preco} (Estoque: ${p.quantidade})</li>`;
-        });
-        html += '</ul>';
-        resultado.innerHTML = html;
-      } else {
-        resultado.innerHTML = '<h3 style="color: #d97706;">⚠️ Conexão OK, mas ZERO produtos!</h3><p>Execute o SQL para inserir produtos.</p>';
-      }
-      
-      // Botão fechar
-      const btn = document.createElement('button');
-      btn.textContent = 'Fechar';
-      btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
-      btn.onclick = () => resultado.remove();
-      resultado.appendChild(btn);
-    })
-    .catch(erro => {
-      resultado.innerHTML = `<h3 style="color: #dc2626;">❌ ERRO NA CONEXÃO</h3><p>${erro.message}</p>`;
-      
-      const btn = document.createElement('button');
-      btn.textContent = 'Fechar';
-      btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
-      btn.onclick = () => resultado.remove();
-      resultado.appendChild(btn);
-    });
-}
-
-window.app = app;
+  if (typeof db !== 'undefined') {
+    db.buscarProdutos()
+      .then(produtos => {
+        if (produtos.length > 0) {
+          let html = '<h3 style="color: #059669;">✅ CONEXÃO FUNCIONANDO!</h3>';
+          html += `<p><strong>${produtos.length} produtos encontrados:</strong></p>`;
+          html += '<ul style="text-align: left;">';
+          produtos.forEach(p => {
+            html += `<li>${p.nome} - R$ ${p.preco} (Estoque: ${p.quantidade})</li>`;
+          });
+          html += '</ul>';
+          resultado.innerHTML = html;
+        } else {
+          resultado.innerHTML = '<h3 style="color: #d97706;">⚠️ Conexão OK, mas ZERO produtos!</h3><p>Execute o SQL para inserir produtos.</p>';
+        }
+        
+        const btn = document.createElement('button');
+        btn.textContent = 'Fechar';
+        btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
+        btn.onclick = () => resultado.remove();
+        resultado.appendChild(btn);
+      })
+      .catch(erro => {
+        resultado.innerHTML = `<h3 style="color: #dc2626;">❌ ERRO NA CONEXÃO</h3><p>${erro.message}</p>`;
+        
+        const btn = document.createElement('button');
+        btn.textContent = 'Fechar';
+        btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
+        btn.onclick = () => resultado.remove();
+        resultado.appendChild(btn);
+      });
+  } else {
+    resultado.innerHTML = '<h3 style="color: #dc2626;">❌ db não encontrado</h3><p>Verifique se o supabase.js foi carregado.</p>';
+    const btn = document.createElement('button');
+    btn.textContent = 'Fechar';
+    btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
+    btn.onclick = () => resultado.remove();
+    resultado.appendChild(btn);
+  }
+};
