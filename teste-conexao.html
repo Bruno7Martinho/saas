@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Teste Supabase</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+    .card { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    button { 
+      padding: 12px 20px; 
+      background: #2563eb; 
+      color: white; 
+      border: none; 
+      border-radius: 6px; 
+      cursor: pointer; 
+      margin: 5px;
+      font-size: 14px;
+    }
+    button:hover { background: #1d4ed8; }
+    pre { 
+      background: #1e293b; 
+      color: #10b981; 
+      padding: 15px; 
+      border-radius: 6px; 
+      overflow-x: auto; 
+      white-space: pre-wrap;
+    }
+    .success { color: #059669; font-weight: bold; }
+    .error { color: #dc2626; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>🔌 Teste de Conexão Supabase</h1>
+  
+  <div class="card">
+    <h2>📡 Configuração</h2>
+    <p><strong>URL:</strong> <code>https://yirwnkeuenwgfkhtxhsv.supabase.co</code></p>
+    <p><strong>Status:</strong> <span id="status">⏳ Aguardando...</span></p>
+  </div>
+  
+  <div class="card">
+    <h2>🎯 Ações</h2>
+    <button onclick="testarConexao()">1️⃣ Testar Conexão</button>
+    <button onclick="buscarProdutos()">2️⃣ Buscar Produtos</button>
+    <button onclick="adicionarTeste()">3️⃣ Adicionar Produto Teste</button>
+    <button onclick="limparTabela()">4️⃣ Limpar Tabela</button>
+    <button onclick="verEstrutura()">5️⃣ Ver Estrutura da Tabela</button>
+  </div>
+  
+  <div class="card">
+    <h2>📋 Resultado</h2>
+    <pre id="resultado">Clique em um botão para testar...</pre>
+  </div>
+
+  <script>
+    // Configuração do Supabase
+    const SUPABASE_URL = 'https://yirwnkeuenwgfkhtxhsv.supabase.co'; 
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpcmd3a2V1ZW53Z2ZraHRoeHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2OTMyODYsImV4cCI6MjA5MTI2OTI4Nn0.mYH6-AQTTQ5QliqJmk8rQ8uuLds8QdLmGs7LAXmIqsM';
+    
+    // Inicializar cliente Supabase (APENAS UMA VEZ)
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    console.log('✅ Cliente Supabase inicializado');
+    
+    // Função para mostrar resultado
+    function mostrarResultado(mensagem, isError = false) {
+      const resultado = document.getElementById('resultado');
+      resultado.textContent = mensagem;
+      resultado.style.color = isError ? '#dc2626' : '#10b981';
+    }
+    
+    // 1. Testar conexão
+    async function testarConexao() {
+      mostrarResultado('🔄 Testando conexão com Supabase...');
+      document.getElementById('status').innerHTML = '⏳ Testando...';
+      
+      try {
+        const start = Date.now();
+        const { data, error } = await supabaseClient
+          .from('produtos')
+          .select('count', { count: 'exact', head: true });
+        
+        const tempo = Date.now() - start;
+        
+        if (error) {
+          mostrarResultado('❌ ERRO: ' + error.message, true);
+          document.getElementById('status').innerHTML = '<span class="error">❌ Falhou</span>';
+        } else {
+          mostrarResultado(`✅ CONEXÃO OK! (${tempo}ms)\n\nSupabase está online e a tabela "produtos" existe.`);
+          document.getElementById('status').innerHTML = '<span class="success">✅ CONECTADO</span>';
+        }
+      } catch (e) {
+        mostrarResultado('❌ EXCEÇÃO: ' + e.message, true);
+        document.getElementById('status').innerHTML = '<span class="error">❌ Erro</span>';
+      }
+    }
+    
+    // 2. Buscar produtos
+    async function buscarProdutos() {
+      mostrarResultado('🔍 Buscando produtos...');
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('produtos')
+          .select('*')
+          .order('nome');
+        
+        if (error) {
+          mostrarResultado('❌ ERRO: ' + JSON.stringify(error, null, 2), true);
+          return;
+        }
+        
+        if (!data || data.length === 0) {
+          mostrarResultado('⚠️ NENHUM PRODUTO ENCONTRADO\n\nA tabela existe mas está vazia.\nClique em "Adicionar Produto Teste" para inserir dados.');
+        } else {
+          let texto = `✅ ${data.length} PRODUTOS ENCONTRADOS:\n\n`;
+          data.forEach((p, i) => {
+            texto += `${i+1}. ${p.nome}\n`;
+            texto += `   Código: ${p.codigo_barras}\n`;
+            texto += `   Preço: R$ ${p.preco}\n`;
+            texto += `   Quantidade: ${p.quantidade}\n\n`;
+          });
+          mostrarResultado(texto);
+        }
+      } catch (e) {
+        mostrarResultado('❌ ERRO: ' + e.message, true);
+      }
+    }
+    
+    // 3. Adicionar produto teste
+    async function adicionarTeste() {
+      mostrarResultado('➕ Adicionando produto de teste...');
+      
+      const timestamp = Date.now().toString().slice(-10);
+      const produto = {
+        nome: 'Produto Teste ' + new Date().toLocaleTimeString(),
+        codigo_barras: timestamp.padStart(13, '7'),
+        preco: 9.99,
+        quantidade: 10,
+        estoque_minimo: 5,
+        categoria: 'Teste'
+      };
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('produtos')
+          .insert(produto)
+          .select();
+        
+        if (error) {
+          if (error.code === '23505') {
+            mostrarResultado('⚠️ Código de barras duplicado! Tentando novamente...');
+            return setTimeout(() => adicionarTeste(), 100);
+          }
+          mostrarResultado('❌ ERRO ao inserir: ' + error.message + '\n\n' + JSON.stringify(error, null, 2), true);
+        } else {
+          mostrarResultado(`✅ PRODUTO ADICIONADO COM SUCESSO!\n\n` + JSON.stringify(data[0], null, 2));
+        }
+      } catch (e) {
+        mostrarResultado('❌ ERRO: ' + e.message, true);
+      }
+    }
+    
+    // 4. Limpar tabela
+    async function limparTabela() {
+      if (!confirm('⚠️ ATENÇÃO! Isso apagará TODOS os produtos. Continuar?')) return;
+      if (!confirm('🚨 ÚLTIMA CHANCE! Tem certeza?')) return;
+      
+      mostrarResultado('🗑️ Limpando tabela...');
+      
+      try {
+        const { error } = await supabaseClient
+          .from('produtos')
+          .delete()
+          .neq('id', 0);
+        
+        if (error) {
+          mostrarResultado('❌ ERRO: ' + error.message, true);
+        } else {
+          mostrarResultado('✅ TABELA LIMPA COM SUCESSO!\n\nAgora clique em "Adicionar Produto Teste" para inserir novos dados.');
+        }
+      } catch (e) {
+        mostrarResultado('❌ ERRO: ' + e.message, true);
+      }
+    }
+    
+    // 5. Ver estrutura da tabela
+    async function verEstrutura() {
+      mostrarResultado('📊 Buscando informações da tabela...');
+      
+      try {
+        const { data, error } = await supabaseClient
+          .from('produtos')
+          .select('*')
+          .limit(1);
+        
+        if (error) {
+          mostrarResultado('❌ ERRO: ' + error.message, true);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const colunas = Object.keys(data[0]);
+          mostrarResultado(`📋 COLUNAS DA TABELA "produtos":\n\n` + colunas.join('\n'));
+        } else {
+          // Buscar estrutura via informação do sistema
+          const { data: info, error: infoError } = await supabaseClient
+            .rpc('get_table_columns', { table_name: 'produtos' });
+          
+          if (infoError) {
+            mostrarResultado('📋 A tabela existe mas está vazia.\n\nColunas esperadas: id, nome, codigo_barras, preco, quantidade, estoque_minimo, categoria, fornecedor, created_at');
+          } else {
+            mostrarResultado('📋 Estrutura:\n' + JSON.stringify(info, null, 2));
+          }
+        }
+      } catch (e) {
+        mostrarResultado('❌ ERRO: ' + e.message, true);
+      }
+    }
+    
+    // Testar automaticamente ao carregar
+    window.onload = () => {
+      console.log('🚀 Página carregada - testando conexão...');
+      testarConexao();
+    };
+  </script>
+</body>
+</html>

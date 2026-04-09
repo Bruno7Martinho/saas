@@ -1145,3 +1145,46 @@ code {
   font-family: 'Monaco', 'Courier New', monospace;
   font-size: 0.9em;
 }
+
+/* ========== MODO ESCURO ========== */
+[data-theme="dark"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+  --card-bg: #1e293b;
+}
+
+[data-theme="dark"] body {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .header,
+[data-theme="dark"] .nav {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] input,
+[data-theme="dark"] select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] table th {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .btn-outline {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* Transição suave */
+body, .card, .header, .nav, input, select, button {
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
