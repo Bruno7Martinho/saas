@@ -1,4 +1,5 @@
-// Vendas.js - Sistema de vendas e carrinho
+// vendas.js - CORRIGIDO (com baixa de estoque)
+
 const vendas = {
   carrinho: [],
   
@@ -7,7 +8,6 @@ const vendas = {
     
     document.getElementById('content').innerHTML = `
       <div class="grid-2">
-        <!-- Lado esquerdo: Busca de produtos -->
         <div class="card">
           <h3 class="mb-4"><i class="fas fa-search"></i> Buscar Produtos</h3>
           <div class="flex mb-4">
@@ -17,11 +17,10 @@ const vendas = {
             </button>
           </div>
           <div id="listaProdutos" style="max-height: 500px; overflow-y: auto;">
-            ${this.renderizarListaProdutos()}
+            ${this.renderizarLista()}
           </div>
         </div>
         
-        <!-- Lado direito: Carrinho -->
         <div class="card">
           <div class="flex-between mb-4">
             <h3><i class="fas fa-shopping-cart"></i> Carrinho</h3>
@@ -32,11 +31,11 @@ const vendas = {
             ` : ''}
           </div>
           
-          <div id="carrinhoContainer" style="max-height: 400px; overflow-y: auto;">
+          <div style="max-height: 400px; overflow-y: auto;">
             ${this.renderizarCarrinho()}
           </div>
           
-          <hr style="margin: 16px 0; border: none; border-top: 2px solid #e5e7eb;">
+          <hr style="margin: 16px 0;">
           
           <div style="font-size: 1.5rem; font-weight: 700; margin-bottom: 16px;">
             Total: R$ ${total.toFixed(2)}
@@ -52,13 +51,16 @@ const vendas = {
     this.attachEventos();
   },
   
-  renderizarListaProdutos(filtro = '') {
+  renderizarLista(filtro = '') {
     const filtrados = filtro ? 
       storage.produtos.filter(p => 
-        p.nome.toLowerCase().includes(filtro) || 
-        p.codigo.includes(filtro)
+        p.nome.toLowerCase().includes(filtro) || p.codigo.includes(filtro)
       ) : 
       storage.produtos;
+    
+    if (filtrados.length === 0) {
+      return '<p style="color: #9ca3af; text-align: center; padding: 20px;">Nenhum produto encontrado</p>';
+    }
     
     return filtrados.map(p => `
       <div class="carrinho-item">
@@ -69,7 +71,7 @@ const vendas = {
           </div>
         </div>
         <button class="btn btn-primary btn-sm" onclick="vendas.adicionar('${p.id}')" ${p.quantidade === 0 ? 'disabled' : ''}>
-          <i class="fas fa-plus"></i> Adicionar
+          <i class="fas fa-plus"></i>
         </button>
       </div>
     `).join('');
@@ -91,9 +93,9 @@ const vendas = {
         
         <div class="carrinho-controles">
           <div class="carrinho-qtd">
-            <button onclick="vendas.diminuirQuantidade(${index})">-</button>
+            <button onclick="vendas.diminuir(${index})">-</button>
             <span>${item.quantidade}</span>
-            <button onclick="vendas.aumentarQuantidade(${index})">+</button>
+            <button onclick="vendas.aumentar(${index})">+</button>
           </div>
           
           <div style="min-width: 80px; text-align: right; font-weight: 600;">
@@ -109,13 +111,10 @@ const vendas = {
   },
   
   attachEventos() {
-    const buscaInput = document.getElementById('buscaVenda');
-    if (buscaInput) {
-      buscaInput.addEventListener('input', (e) => {
-        const termo = e.target.value.toLowerCase();
-        document.getElementById('listaProdutos').innerHTML = this.renderizarListaProdutos(termo);
-      });
-    }
+    document.getElementById('buscaVenda')?.addEventListener('input', (e) => {
+      const termo = e.target.value.toLowerCase();
+      document.getElementById('listaProdutos').innerHTML = this.renderizarLista(termo);
+    });
   },
   
   handleScanner(codigo) {
@@ -123,7 +122,6 @@ const vendas = {
     if (produto) {
       if (produto.quantidade > 0) {
         vendas.adicionar(produto.id);
-        app.mostrarToast(`${produto.nome} adicionado`, 'success');
       } else {
         app.mostrarToast('Produto sem estoque!', 'error');
       }
@@ -154,7 +152,7 @@ const vendas = {
     this.renderizar();
   },
   
-  aumentarQuantidade(index) {
+  aumentar(index) {
     const item = this.carrinho[index];
     const produto = storage.produtos.find(p => p.id === item.id);
     
@@ -162,11 +160,11 @@ const vendas = {
       item.quantidade++;
       this.renderizar();
     } else {
-      app.mostrarToast('Estoque máximo atingido!', 'error');
+      app.mostrarToast('Estoque máximo!', 'error');
     }
   },
   
-  diminuirQuantidade(index) {
+  diminuir(index) {
     const item = this.carrinho[index];
     if (item.quantidade > 1) {
       item.quantidade--;
@@ -188,7 +186,7 @@ const vendas = {
     }
   },
   
-  finalizar() {
+  async finalizar() {
     // Verificar estoque
     for (let item of this.carrinho) {
       const produto = storage.produtos.find(p => p.id === item.id);
@@ -198,17 +196,17 @@ const vendas = {
       }
     }
     
-    // Atualizar estoque
-    this.carrinho.forEach(item => {
-      const produto = storage.produtos.find(p => p.id === item.id);
-      produto.quantidade -= item.quantidade;
-    });
-    
-    // Registrar venda
     const total = this.carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
-    storage.adicionarVenda({
-      itens: [...this.carrinho],
-      total
+    
+    // Salvar venda (isso já atualiza o estoque automaticamente)
+    await storage.adicionarVenda({
+      total,
+      itens: this.carrinho.map(i => ({
+        id: i.id,
+        nome: i.nome,
+        quantidade: i.quantidade,
+        preco: i.preco
+      }))
     });
     
     app.mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
