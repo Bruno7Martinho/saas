@@ -20,6 +20,9 @@ const app = {
     if (pagina === 'estoque') estoque.renderizar();
     else if (pagina === 'vendas') vendas.renderizar();
     else if (pagina === 'cadastro') this.renderizarCadastro();
+    else if (pagina === 'relatorios') relatorios.renderizar();
+    else if (pagina === 'fornecedores') fornecedores.renderizar();
+    else if (pagina === 'configuracoes') configuracoes.renderizar();
   },
   
   renderizarCadastro() {
@@ -58,6 +61,16 @@ const app = {
             <input type="number" id="minInput" value="10" class="w-full">
           </div>
           
+          <div class="mb-4">
+            <label>Fornecedor</label>
+            <select id="fornecedorInput" class="w-full">
+              <option value="">Selecione...</option>
+              ${fornecedores && fornecedores.lista ? fornecedores.lista.map(f => 
+                `<option value="${f.nome}">${f.nome}</option>`
+              ).join('') : ''}
+            </select>
+          </div>
+          
           <button type="submit" class="btn btn-primary w-full">
             <i class="fas fa-save"></i> Cadastrar
           </button>
@@ -74,13 +87,22 @@ const app = {
     const preco = parseFloat(document.getElementById('precoInput').value);
     const quantidade = parseInt(document.getElementById('qtdInput').value);
     const minimo = parseInt(document.getElementById('minInput').value);
+    const fornecedor = document.getElementById('fornecedorInput')?.value || '';
     
     if (storage.produtos.find(p => p.codigo === codigo)) {
       this.mostrarToast('Código já cadastrado!', 'error');
       return;
     }
     
-    storage.adicionarProduto({ nome, codigo, preco, quantidade, estoqueMinimo: minimo });
+    storage.adicionarProduto({ 
+      nome, 
+      codigo, 
+      preco, 
+      quantidade, 
+      estoqueMinimo: minimo,
+      fornecedor: fornecedor
+    });
+    
     this.mostrarToast('Produto cadastrado!', 'success');
     this.mudarPagina('estoque');
   },
@@ -89,11 +111,16 @@ const app = {
     const toast = document.createElement('div');
     toast.className = 'toast';
     toast.style.background = tipo === 'error' ? '#dc2626' : tipo === 'success' ? '#059669' : '#1f2937';
-    toast.innerHTML = `<i class="fas fa-${tipo === 'success' ? 'check' : tipo === 'error' ? 'times' : 'info'}-circle"></i> ${mensagem}`;
+    
+    const icon = tipo === 'success' ? 'check' : tipo === 'error' ? 'times' : 'info';
+    toast.innerHTML = `<i class="fas fa-${icon}-circle"></i> ${mensagem}`;
+    
     document.body.appendChild(toast);
     setTimeout(() => toast.remove(), 3000);
   }
 };
 
 // Iniciar aplicação
-app.inicializar();
+document.addEventListener('DOMContentLoaded', () => {
+  app.inicializar();
+});
