@@ -353,4 +353,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+
+function verificarConexao() {
+  // Criar uma div de resultado
+  const resultado = document.createElement('div');
+  resultado.style.cssText = `
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    z-index: 99999;
+    max-width: 500px;
+    max-height: 400px;
+    overflow: auto;
+  `;
+  
+  resultado.innerHTML = '<h3>🔍 Testando conexão...</h3>';
+  document.body.appendChild(resultado);
+  
+  // Testar conexão
+  db.buscarProdutos()
+    .then(produtos => {
+      if (produtos.length > 0) {
+        let html = '<h3 style="color: #059669;">✅ CONEXÃO FUNCIONANDO!</h3>';
+        html += `<p><strong>${produtos.length} produtos encontrados:</strong></p>`;
+        html += '<ul style="text-align: left;">';
+        produtos.forEach(p => {
+          html += `<li>${p.nome} - R$ ${p.preco} (Estoque: ${p.quantidade})</li>`;
+        });
+        html += '</ul>';
+        resultado.innerHTML = html;
+      } else {
+        resultado.innerHTML = '<h3 style="color: #d97706;">⚠️ Conexão OK, mas ZERO produtos!</h3><p>Execute o SQL para inserir produtos.</p>';
+      }
+      
+      // Botão fechar
+      const btn = document.createElement('button');
+      btn.textContent = 'Fechar';
+      btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
+      btn.onclick = () => resultado.remove();
+      resultado.appendChild(btn);
+    })
+    .catch(erro => {
+      resultado.innerHTML = `<h3 style="color: #dc2626;">❌ ERRO NA CONEXÃO</h3><p>${erro.message}</p>`;
+      
+      const btn = document.createElement('button');
+      btn.textContent = 'Fechar';
+      btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
+      btn.onclick = () => resultado.remove();
+      resultado.appendChild(btn);
+    });
+}
+
 window.app = app;

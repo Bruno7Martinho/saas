@@ -33,6 +33,10 @@
           <i class="fas fa-barcode"></i> Scanner
         </button>
       </div>
+
+      <button onclick="verificarConexao()" style="background: #10b981; color: white; padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;">
+    🔍 Testar Conexão
+  </button>
     </header>
     
     <!-- Navegação -->
@@ -138,20 +142,12 @@
   
   <!-- 1. Storage (dados) -->
    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/storage.js"></script>
-  
-  <!-- 2. Scanner -->
-  <script src="js/scanner.js"></script>
-  
-  <!-- 3. Módulos principais -->
-  <script src="js/estoque.js"></script>
-  <script src="js/vendas.js"></script>
-  
-  <!-- 4. Módulos adicionais (crie estes arquivos) -->
-  <script src="js/fornecedores.js"></script>
-  <script src="js/relatorios.js"></script>
-  <script src="js/configuracoes.js"></script>
+<script src="js/supabase.js"></script>  <!-- 👈 PRIMEIRO -->
+<script src="js/storage.js"></script>   <!-- 👈 DEPOIS -->
+<script src="js/scanner.js"></script>
+<script src="js/estoque.js"></script>
+<script src="js/vendas.js"></script>
+<script src="js/app.js"></script>
   
   <!-- 5. App (sempre por último) -->
   <script src="js/app.js"></script>
