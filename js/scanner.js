@@ -1,40 +1,33 @@
-// ============================================
-// Scanner.js - Versão FUNCIONAL e ESTÁVEL
-// Câmera + USB + Bip Sonoro
-// ============================================
+// Scanner.js - COMPLETO com linha vermelha animada (estilo laser)
 
 const scanner = {
-  // Câmera
   ativo: false,
   reader: null,
   callback: null,
+  animationFrame: null,
+  linhaPosition: 0,
   
-  // USB
+  // Modo USB
   bufferUSB: '',
   timeoutUSB: null,
   usbAtivo: true,
   
   // Áudio
   audioContext: null,
+  audioInicializado: false,
 
   // ========== INICIALIZAR ==========
   inicializar() {
     this.inicializarUSB();
-    this.prepararAudio();
+    this.inicializarAudio();
     console.log('✅ Scanner pronto!');
   },
 
-  // ========== SCANNER USB ==========
   inicializarUSB() {
     document.addEventListener('keypress', (e) => {
       if (!this.usbAtivo) return;
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       
-      // Não processar se estiver digitando em um campo
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
-      
-      // Enter = fim do código
       if (e.key === 'Enter') {
         e.preventDefault();
         if (this.bufferUSB.length > 3) {
@@ -56,15 +49,13 @@ const scanner = {
     });
   },
 
-  // ========== ÁUDIO ==========
-  prepararAudio() {
+  inicializarAudio() {
     const ativar = () => {
       try {
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
         this.audioContext.resume();
-      } catch (e) {
-        console.log('Áudio não suportado');
-      }
+        this.audioInicializado = true;
+      } catch (e) {}
     };
     
     document.addEventListener('touchstart', ativar, { once: true });
@@ -78,9 +69,7 @@ const scanner = {
       }
       
       const ctx = this.audioContext;
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (ctx.state === 'suspended') ctx.resume();
       
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -94,35 +83,32 @@ const scanner = {
       
       osc.start();
       osc.stop(ctx.currentTime + 0.1);
-    } catch (e) {
-      console.log('Bip falhou');
-    }
+    } catch (e) {}
   },
 
-  // ========== CÂMERA - FUNCIONANDO ==========
+  // ========== CÂMERA COM LINHA VERMELHA ==========
   async abrir(callback) {
     this.callback = callback || this.processarCodigo.bind(this);
     
     const modal = document.getElementById('scannerModal');
-    if (!modal) {
-      console.error('Modal não encontrado!');
-      return;
-    }
+    if (!modal) return;
     
     modal.style.display = 'block';
     
+    // Adicionar linha vermelha se não existir
+    this.criarLinhaVermelha();
+    
+    // Iniciar animação da linha
+    this.iniciarAnimacaoLinha();
+    
     try {
-      // Criar reader
       this.reader = new ZXing.BrowserMultiFormatReader();
-      
-      // Listar câmeras
       const devices = await this.reader.listVideoInputDevices();
       
       if (devices.length === 0) {
         throw new Error('Nenhuma câmera encontrada');
       }
       
-      // Preferir câmera traseira
       const device = devices.find(d => 
         d.label.toLowerCase().includes('back') || 
         d.label.toLowerCase().includes('traseira') ||
@@ -133,7 +119,6 @@ const scanner = {
       
       this.ativo = true;
       
-      // Iniciar decodificação
       await this.reader.decodeFromVideoDevice(
         device.deviceId,
         'scanner-video',
@@ -141,21 +126,17 @@ const scanner = {
           if (resultado && this.ativo) {
             const codigo = resultado.text;
             
-            // Bip
             this.tocarBip();
             
-            // Atualizar texto
             const lastScan = document.getElementById('lastScanText');
             if (lastScan) {
-              lastScan.textContent = `✅ ${codigo}`;
+              lastScan.innerHTML = `✅ ${codigo}<br><small>Formato: ${this.getFormatoNome(resultado.format)}</small>`;
             }
             
-            // Callback
             if (this.callback) {
               this.callback(codigo);
             }
             
-            // Fechar
             setTimeout(() => this.fechar(), 500);
           }
         }
@@ -163,83 +144,152 @@ const scanner = {
       
       const lastScan = document.getElementById('lastScanText');
       if (lastScan) {
-        lastScan.textContent = '🔍 Escaneando...';
+        lastScan.innerHTML = '🔍 Escaneando...<br><small>Posicione o código na área verde</small>';
       }
       
     } catch (error) {
       console.error('Erro na câmera:', error);
-      
-      if (typeof app !== 'undefined' && app.mostrarToast) {
+      if (typeof app !== 'undefined') {
         app.mostrarToast('Erro ao acessar câmera', 'error');
       }
-      
       this.fechar();
     }
   },
 
+  // ========== LINHA VERMELHA ANIMADA ==========
+  criarLinhaVermelha() {
+    const container = document.querySelector('.scanner-video-container');
+    if (!container) return;
+    
+    // Remover linha antiga se existir
+    const linhaAntiga = document.getElementById('scanner-laser-line');
+    if (linhaAntiga) linhaAntiga.remove();
+    
+    // Criar nova linha
+    const linha = document.createElement('div');
+    linha.id = 'scanner-laser-line';
+    linha.style.cssText = `
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, 
+        transparent 0%, 
+        #ff0000 20%, 
+        #ff0000 80%, 
+        transparent 100%
+      );
+      box-shadow: 0 0 10px #ff0000, 0 0 20px #ff0000;
+      pointer-events: none;
+      z-index: 100;
+      opacity: 0.8;
+    `;
+    
+    container.appendChild(linha);
+  },
+
+  iniciarAnimacaoLinha() {
+    const linha = document.getElementById('scanner-laser-line');
+    const container = document.querySelector('.scanner-video-container');
+    
+    if (!linha || !container) return;
+    
+    const containerHeight = container.clientHeight;
+    this.linhaPosition = 0;
+    let direction = 1;
+    
+    const animar = () => {
+      if (!this.ativo) return;
+      
+      const containerHeight = container.clientHeight;
+      
+      this.linhaPosition += direction * 3;
+      
+      if (this.linhaPosition >= containerHeight - 2) {
+        this.linhaPosition = containerHeight - 2;
+        direction = -1;
+      } else if (this.linhaPosition <= 0) {
+        this.linhaPosition = 0;
+        direction = 1;
+      }
+      
+      linha.style.top = this.linhaPosition + 'px';
+      
+      this.animationFrame = requestAnimationFrame(animar);
+    };
+    
+    this.animationFrame = requestAnimationFrame(animar);
+  },
+
+  pararAnimacaoLinha() {
+    if (this.animationFrame) {
+      cancelAnimationFrame(this.animationFrame);
+      this.animationFrame = null;
+    }
+    
+    const linha = document.getElementById('scanner-laser-line');
+    if (linha) linha.remove();
+  },
+
+  // ========== FECHAR ==========
   fechar() {
     this.ativo = false;
+    this.pararAnimacaoLinha();
     
     const modal = document.getElementById('scannerModal');
     if (modal) modal.style.display = 'none';
     
-    // Parar câmera
     if (this.reader) {
       this.reader.reset();
       this.reader = null;
     }
     
-    // Limpar video
     const video = document.getElementById('scanner-video');
     if (video && video.srcObject) {
-      const tracks = video.srcObject.getTracks();
-      tracks.forEach(track => track.stop());
+      video.srcObject.getTracks().forEach(track => track.stop());
       video.srcObject = null;
     }
   },
 
   // ========== PROCESSAR CÓDIGO ==========
   processarCodigo(codigo) {
-    console.log('📟 Código detectado:', codigo);
+    console.log('📟 Código:', codigo);
     
-    // Preencher campos
     const inputCodigo = document.getElementById('codigoInput');
     const buscaVenda = document.getElementById('buscaVenda');
-    const buscaEstoque = document.getElementById('buscaEstoque');
     
     if (inputCodigo) inputCodigo.value = codigo;
     if (buscaVenda) {
       buscaVenda.value = codigo;
       buscaVenda.dispatchEvent(new Event('input', { bubbles: true }));
     }
-    if (buscaEstoque) {
-      buscaEstoque.value = codigo;
-      buscaEstoque.dispatchEvent(new Event('input', { bubbles: true }));
-    }
     
-    // Ações por página
-    if (typeof app !== 'undefined' && app.paginaAtual) {
-      if (app.paginaAtual === 'vendas') {
-        const produto = storage.produtos.find(p => p.codigo === codigo);
-        if (produto) {
-          if (produto.quantidade > 0) {
-            vendas.adicionar(produto.id);
-            app.mostrarToast(`✅ ${produto.nome}`, 'success');
-          } else {
-            app.mostrarToast(`❌ Sem estoque`, 'error');
-          }
+    if (typeof app !== 'undefined' && app.paginaAtual === 'vendas') {
+      const produto = storage.produtos.find(p => p.codigo === codigo);
+      if (produto) {
+        if (produto.quantidade > 0) {
+          vendas.adicionar(produto.id);
+          app.mostrarToast(`✅ ${produto.nome}`, 'success');
         } else {
-          app.mostrarToast(`❌ Não cadastrado`, 'error');
-        }
-      } else if (app.paginaAtual === 'estoque') {
-        const produto = storage.produtos.find(p => p.codigo === codigo);
-        if (produto) {
-          app.mostrarToast(`${produto.nome} - R$ ${produto.preco.toFixed(2)}`, 'info');
+          app.mostrarToast(`❌ Sem estoque`, 'error');
         }
       } else {
-        app.mostrarToast(`Código: ${codigo}`, 'info');
+        app.mostrarToast(`❌ Não encontrado`, 'error');
       }
     }
+  },
+
+  getFormatoNome(formato) {
+    const formatos = {
+      11: 'QR Code',
+      5: 'Code 128',
+      3: 'Code 39',
+      8: 'EAN-13',
+      7: 'EAN-8',
+      13: 'UPC-A',
+      14: 'UPC-E'
+    };
+    return formatos[formato] || 'Código de Barras';
   },
 
   // ========== ENTRADA MANUAL ==========
@@ -255,13 +305,11 @@ const scanner = {
 
   toggleUSB() {
     this.usbAtivo = !this.usbAtivo;
-    if (typeof app !== 'undefined' && app.mostrarToast) {
+    if (typeof app !== 'undefined') {
       app.mostrarToast(`USB ${this.usbAtivo ? 'ON' : 'OFF'}`, 'info');
     }
   }
 };
 
-// Iniciar quando a página carregar
-document.addEventListener('DOMContentLoaded', () => {
-  scanner.inicializar();
-});
+// Iniciar
+document.addEventListener('DOMContentLoaded', () => scanner.inicializar());
