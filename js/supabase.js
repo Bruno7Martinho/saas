@@ -1,11 +1,14 @@
-// js/supabase.js - Versão COMPLETA e CORRIGIDA
+// js/supabase.js - CORRIGIDO (Erro 400 resolvido)
 
 // Verificar se já existe, se não, criar
 if (!window.supabaseClient) {
-  const SUPABASE_URL = 'https://yirwnkeuenwgfkhtHxsv.supabase.co';
+  const SUPABASE_URL = 'https://yirwnkeuenwgfkhthxsv.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlpcndua2V1ZW53Z2ZraHRoeHN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2OTMyODYsImV4cCI6MjA5MTI2OTI4Nn0.mYH6-AQTTQ5QliqJmk8rQ8uuLds8QdLmGs7LAXmIqsM';
   
-  window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: { persistSession: false },
+    db: { schema: 'public' }
+  });
   console.log('✅ Cliente Supabase criado');
 }
 
@@ -14,7 +17,7 @@ window.db = {
   // ========== PRODUTOS ==========
   async buscarProdutos() {
     try {
-      console.log('🔍 Buscando produtos do Supabase...');
+      console.log('🔍 Buscando produtos...');
       
       const { data, error } = await window.supabaseClient
         .from('produtos')
@@ -22,17 +25,19 @@ window.db = {
         .order('nome');
       
       if (error) {
-        console.error('❌ Erro ao buscar produtos:', error);
+        console.error('❌ Erro ao buscar:', error);
         return [];
       }
       
-      console.log(`✅ ${data.length} produtos encontrados`);
+      console.log(`✅ ${data?.length || 0} produtos encontrados`);
+      
+      if (!data) return [];
       
       return data.map(p => ({
         id: String(p.id),
-        nome: p.nome,
-        codigo: p.codigo_barras,
-        preco: Number(p.preco),
+        nome: p.nome || '',
+        codigo: p.codigo_barras || '',
+        preco: Number(p.preco) || 0,
         quantidade: p.quantidade || 0,
         estoqueMinimo: p.estoque_minimo || 10,
         categoria: p.categoria || 'Geral',
@@ -46,40 +51,47 @@ window.db = {
   
   async adicionarProduto(produto) {
     try {
-      console.log('➕ Adicionando produto:', produto.nome);
+      console.log('📤 Enviando para Supabase:', produto);
+      
+      // Garantir que todos os campos obrigatórios existam
+      const dadosParaInserir = {
+        nome: produto.nome,
+        codigo_barras: String(produto.codigo),
+        preco: Number(produto.preco),
+        quantidade: Number(produto.quantidade) || 0,
+        estoque_minimo: Number(produto.estoqueMinimo) || 10,
+        categoria: produto.categoria || 'Geral',
+        fornecedor: produto.fornecedor || ''
+      };
       
       const { data, error } = await window.supabaseClient
         .from('produtos')
-        .insert({
-          nome: produto.nome,
-          codigo_barras: produto.codigo,
-          preco: produto.preco,
-          quantidade: produto.quantidade,
-          estoque_minimo: produto.estoqueMinimo || 10,
-          categoria: produto.categoria || 'Geral',
-          fornecedor: produto.fornecedor || ''
-        })
+        .insert(dadosParaInserir)
         .select()
         .single();
       
       if (error) {
-        console.error('❌ Erro ao adicionar:', error);
-        throw error;
+        console.error('❌ Erro Supabase:', error);
+        
+        // Se for erro de código duplicado
+        if (error.code === '23505') {
+          throw new Error('Código de barras já cadastrado!');
+        }
+        
+        throw new Error(error.message || 'Erro ao salvar');
       }
       
-      console.log('✅ Produto adicionado:', data);
+      console.log('✅ Produto salvo:', data);
       return data;
       
     } catch (e) {
-      console.error('❌ Erro:', e);
+      console.error('❌ Exceção:', e);
       throw e;
     }
   },
   
   async atualizarProduto(id, dados) {
     try {
-      console.log('✏️ Atualizando produto:', id);
-      
       const { error } = await window.supabaseClient
         .from('produtos')
         .update({
@@ -90,39 +102,25 @@ window.db = {
         })
         .eq('id', id);
       
-      if (error) {
-        console.error('❌ Erro ao atualizar:', error);
-        throw error;
-      }
-      
-      console.log('✅ Produto atualizado');
+      if (error) throw error;
       return true;
-      
     } catch (e) {
-      console.error('❌ Erro:', e);
+      console.error('❌ Erro ao atualizar:', e);
       throw e;
     }
   },
   
   async removerProduto(id) {
     try {
-      console.log('🗑️ Removendo produto:', id);
-      
       const { error } = await window.supabaseClient
         .from('produtos')
         .delete()
         .eq('id', id);
       
-      if (error) {
-        console.error('❌ Erro ao remover:', error);
-        throw error;
-      }
-      
-      console.log('✅ Produto removido');
+      if (error) throw error;
       return true;
-      
     } catch (e) {
-      console.error('❌ Erro:', e);
+      console.error('❌ Erro ao remover:', e);
       throw e;
     }
   },
@@ -132,7 +130,7 @@ window.db = {
       const { data, error } = await window.supabaseClient
         .from('produtos')
         .select('*')
-        .eq('codigo_barras', codigo)
+        .eq('codigo_barras', String(codigo))
         .single();
       
       if (error) return null;
@@ -151,92 +149,77 @@ window.db = {
   
   // ========== VENDAS ==========
   async salvarVenda(venda) {
-  console.log('💾 Salvando venda no Supabase:', venda);
-  
-  try {
-    // 1. Inserir a venda
-    const { data: vendaData, error: vendaError } = await window.supabaseClient
-      .from('vendas')
-      .insert({
-        total: venda.total,
-        cliente: venda.cliente || 'Cliente Balcão',
-        forma_pagamento: venda.forma_pagamento || 'dinheiro' // 👈 SALVAR FORMA DE PGTO
-      })
-      .select()
-      .single();
-    
-    if (vendaError) {
-      console.error('❌ Erro ao salvar venda:', vendaError);
-      throw vendaError;
-    }
-    
-    console.log('✅ Venda salva, ID:', vendaData.id);
-    
-    // 2. Inserir os itens
-    if (venda.itens && venda.itens.length > 0) {
-      const itensParaInserir = venda.itens.map(item => ({
-        venda_id: vendaData.id,
-        produto_id: item.id,
-        nome_produto: item.nome || 'Produto', // 👈 SALVAR NOME DO PRODUTO
-        quantidade: item.quantidade,
-        preco_unitario: item.preco || item.preco_unitario || 0
-      }));
-      
-      const { error: itensError } = await window.supabaseClient
-        .from('itens_venda')
-        .insert(itensParaInserir);
-      
-      if (itensError) {
-        console.error('❌ Erro ao salvar itens:', itensError);
-      } else {
-        console.log(`✅ ${itensParaInserir.length} itens salvos`);
-      }
-    }
-    
-    // 3. Atualizar estoque
-    for (const item of venda.itens) {
-      const { data: produto } = await window.supabaseClient
-        .from('produtos')
-        .select('quantidade')
-        .eq('id', item.id)
-        .single();
-      
-      if (produto) {
-        const novaQuantidade = produto.quantidade - item.quantidade;
-        await window.supabaseClient
-          .from('produtos')
-          .update({ quantidade: novaQuantidade })
-          .eq('id', item.id);
-      }
-    }
-    
-    return vendaData;
-    
-  } catch (error) {
-    console.error('❌ Erro ao processar venda:', error);
-    throw error;
-  }
-},
-  
-  async buscarVendas(limite = 100) {
-    console.log('🔍 Buscando vendas do Supabase...');
+    console.log('💾 Salvando venda:', venda);
     
     try {
-      // Buscar vendas
+      // 1. Inserir a venda
+      const { data: vendaData, error: vendaError } = await window.supabaseClient
+        .from('vendas')
+        .insert({
+          total: Number(venda.total),
+          cliente: venda.cliente || 'Cliente Balcão',
+          forma_pagamento: venda.forma_pagamento || 'dinheiro'
+        })
+        .select()
+        .single();
+      
+      if (vendaError) throw vendaError;
+      
+      console.log('✅ Venda salva, ID:', vendaData.id);
+      
+      // 2. Inserir os itens
+      if (venda.itens && venda.itens.length > 0) {
+        const itensParaInserir = venda.itens.map(item => ({
+          venda_id: vendaData.id,
+          produto_id: item.id,
+          nome_produto: item.nome || 'Produto',
+          quantidade: Number(item.quantidade),
+          preco_unitario: Number(item.preco || item.preco_unitario || 0)
+        }));
+        
+        const { error: itensError } = await window.supabaseClient
+          .from('itens_venda')
+          .insert(itensParaInserir);
+        
+        if (itensError) console.error('❌ Erro ao salvar itens:', itensError);
+        else console.log(`✅ ${itensParaInserir.length} itens salvos`);
+      }
+      
+      // 3. Atualizar estoque
+      for (const item of venda.itens) {
+        const { data: produto } = await window.supabaseClient
+          .from('produtos')
+          .select('quantidade')
+          .eq('id', item.id)
+          .single();
+        
+        if (produto) {
+          const novaQuantidade = produto.quantidade - item.quantidade;
+          await window.supabaseClient
+            .from('produtos')
+            .update({ quantidade: novaQuantidade })
+            .eq('id', item.id);
+        }
+      }
+      
+      return vendaData;
+      
+    } catch (error) {
+      console.error('❌ Erro ao processar venda:', error);
+      throw error;
+    }
+  },
+  
+  async buscarVendas(limite = 100) {
+    try {
       const { data: vendas, error } = await window.supabaseClient
         .from('vendas')
         .select('*')
         .order('created_at', { ascending: false })
         .limit(limite);
       
-      if (error) {
-        console.error('❌ Erro ao buscar vendas:', error);
-        return [];
-      }
+      if (error) return [];
       
-      console.log(`✅ ${vendas.length} vendas encontradas`);
-      
-      // Para cada venda, buscar os itens
       const vendasComItens = [];
       
       for (const venda of vendas) {
@@ -250,6 +233,7 @@ window.db = {
           data: venda.created_at,
           total: venda.total,
           cliente: venda.cliente,
+          forma_pagamento: venda.forma_pagamento,
           itens: itens || []
         });
       }
@@ -274,7 +258,6 @@ window.db = {
       if (error) throw error;
       return data;
     } catch (e) {
-      console.error('Erro:', e);
       return [];
     }
   },
@@ -289,7 +272,6 @@ window.db = {
         .single();
       
       if (error) {
-        // Retornar padrão se não existir
         return {
           nome_loja: 'Minha Conveniência',
           alerta_estoque: 10,
@@ -323,4 +305,4 @@ window.db = {
   }
 };
 
-console.log('✅ db disponível globalmente com todas as funções!');
+console.log('✅ db disponível com todas as funções!');

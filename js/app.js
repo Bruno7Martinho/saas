@@ -233,53 +233,62 @@ const app = {
   
   // ========== CADASTRAR PRODUTO (CORRIGIDO) ==========
   async cadastrarProduto(e) {
-    e.preventDefault();
-    
-    const nome = document.getElementById('nomeInput').value.trim();
-    const codigo = document.getElementById('codigoInput').value.trim();
-    const preco = parseFloat(document.getElementById('precoInput').value);
-    const quantidade = parseInt(document.getElementById('qtdInput').value);
-    const minimo = parseInt(document.getElementById('minInput').value) || 10;
-    const fornecedor = document.getElementById('fornecedorInput')?.value || '';
-    const categoria = document.getElementById('categoriaInput')?.value || 'Geral';
-    
-    if (!nome || !codigo) {
-      this.mostrarToast('Preencha todos os campos obrigatórios!', 'error');
-      return;
-    }
-    
-    if (preco <= 0) {
-      this.mostrarToast('Preço deve ser maior que zero!', 'error');
-      return;
-    }
-    
-    // Verificar se já existe
-    const existente = storage.produtos.find(p => p.codigo === codigo);
-    if (existente) {
-      this.mostrarToast('Código já cadastrado!', 'error');
-      return;
-    }
-    
-    console.log('📦 Cadastrando produto:', { nome, codigo, preco, quantidade });
-    
-    // Salvar no Supabase
-    await storage.adicionarProduto({ 
-      nome, 
-      codigo, 
-      preco, 
-      quantidade, 
+  e.preventDefault();
+  
+  const nome = document.getElementById('nomeInput').value.trim();
+  const codigo = document.getElementById('codigoInput').value.trim();
+  const preco = parseFloat(document.getElementById('precoInput').value);
+  const quantidade = parseInt(document.getElementById('qtdInput').value);
+  const minimo = parseInt(document.getElementById('minInput').value) || 10;
+  const fornecedor = document.getElementById('fornecedorInput')?.value || '';
+  const categoria = document.getElementById('categoriaInput')?.value || 'Geral';
+  
+  if (!nome || !codigo) {
+    this.mostrarToast('Preencha todos os campos!', 'error');
+    return;
+  }
+  
+  console.log('🚀 FORÇANDO SALVAMENTO DIRETO NO SUPABASE');
+  
+  // SALVAR DIRETO NO SUPABASE (sem storage)
+  try {
+    const resultado = await window.db.adicionarProduto({
+      nome,
+      codigo,
+      preco,
+      quantidade,
       estoqueMinimo: minimo,
-      fornecedor,
-      categoria
+      categoria,
+      fornecedor
     });
     
-    this.mostrarToast('Produto cadastrado com sucesso!', 'success');
+    console.log('✅✅✅ SALVO NO SUPABASE:', resultado);
+    this.mostrarToast('Produto cadastrado no Supabase!', 'success');
     
-    // Aguardar um pouco e atualizar a página de estoque
-    setTimeout(() => {
-      this.mudarPagina('estoque');
-    }, 200);
-  },
+    // Recarregar lista
+    storage.produtos = await window.db.buscarProdutos();
+    storage.salvar();
+    storage.atualizarStats();
+    
+    this.mudarPagina('estoque');
+    
+  } catch (error) {
+    console.error('❌ ERRO NO SUPABASE:', error);
+    this.mostrarToast('Erro: ' + error.message, 'error');
+    
+    // Fallback local
+    storage.produtos.push({
+      id: Date.now().toString(),
+      nome, codigo, preco, quantidade,
+      estoqueMinimo: minimo,
+      categoria, fornecedor
+    });
+    storage.salvar();
+    storage.atualizarStats();
+    this.mostrarToast('Salvo apenas localmente', 'warning');
+    this.mudarPagina('estoque');
+  }
+},
   
   mostrarToast(mensagem, tipo = 'info') {
     let container = document.getElementById('toast-container');
