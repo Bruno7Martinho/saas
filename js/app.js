@@ -1,10 +1,10 @@
-// App.js - Inicialização e navegação (Versão CORRIGIDA com Sidebar Funcional)
+// App.js - COMPLETO E CORRIGIDO (Salva no Supabase e atualiza tela)
 
 const app = {
   paginaAtual: 'estoque',
   
-  inicializar() {
-    storage.inicializar();
+  async inicializar() {
+    await storage.inicializar(); // 👈 AGUARDAR carregar dados do banco
     this.inicializarAtalhos();
     this.carregarTema();
     this.atualizarHeader();
@@ -49,16 +49,6 @@ const app = {
             this.mudarPagina('historico');
             this.mostrarToast('📜 Histórico', 'info');
             break;
-          case 'r':
-            e.preventDefault();
-            this.mudarPagina('relatorios');
-            this.mostrarToast('📊 Relatórios', 'info');
-            break;
-          case 'c':
-            e.preventDefault();
-            this.mudarPagina('configuracoes');
-            this.mostrarToast('⚙️ Configurações', 'info');
-            break;
           case 's':
             e.preventDefault();
             if (typeof scanner !== 'undefined') scanner.abrir();
@@ -80,14 +70,7 @@ const app = {
     
     if (sidebar) {
       sidebar.classList.toggle('open');
-      
-      if (sidebar.classList.contains('open')) {
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
-      }
-    } else {
-      console.error('❌ Sidebar não encontrada!');
+      document.body.style.overflow = sidebar.classList.contains('open') ? 'hidden' : '';
     }
   },
   
@@ -102,91 +85,41 @@ const app = {
   mudarPagina(pagina) {
     console.log('🔄 Mudando para página:', pagina);
     
-    // Fechar sidebar no mobile
     if (window.innerWidth <= 768) {
       this.closeSidebar();
     }
     
     const content = document.getElementById('content');
-    if (!content) {
-      console.error('❌ Elemento #content não encontrado!');
-      return;
-    }
+    if (!content) return;
     
     // Atualizar botões ativos na sidebar
     document.querySelectorAll('.sidebar-btn').forEach(btn => {
       btn.classList.remove('active');
-      if (btn.dataset.page === pagina) {
-        btn.classList.add('active');
-      }
+      if (btn.dataset.page === pagina) btn.classList.add('active');
     });
     
-    // Guardar página atual
     this.paginaAtual = pagina;
     
-    // Renderizar a página solicitada
     try {
-      if (pagina === 'estoque') {
-        if (typeof estoque !== 'undefined') {
-          console.log('✅ Renderizando Estoque');
-          estoque.renderizar();
-        } else {
-          console.error('❌ Módulo estoque não encontrado');
-          this.renderizarErro('Módulo Estoque não carregado');
-        }
-      } 
-      else if (pagina === 'vendas') {
-        if (typeof vendas !== 'undefined') {
-          console.log('✅ Renderizando Vendas');
-          vendas.renderizar();
-        } else {
-          console.error('❌ Módulo vendas não encontrado');
-          this.renderizarErro('Módulo Vendas não carregado');
-        }
-      } 
-      else if (pagina === 'cadastro') {
-        console.log('✅ Renderizando Cadastro');
+      if (pagina === 'estoque' && typeof estoque !== 'undefined') {
+        estoque.renderizar();
+      } else if (pagina === 'vendas' && typeof vendas !== 'undefined') {
+        vendas.renderizar();
+      } else if (pagina === 'cadastro') {
         this.renderizarCadastro();
-      } 
-      else if (pagina === 'historico') {
-        if (typeof historico !== 'undefined') {
-          console.log('✅ Renderizando Histórico');
-          historico.renderizar();
-        } else {
-          console.error('❌ Módulo historico não encontrado');
-          this.renderizarErro('Módulo Histórico não carregado');
-        }
-      } 
-      else if (pagina === 'relatorios') {
-        if (typeof relatorios !== 'undefined') {
-          console.log('✅ Renderizando Relatórios');
-          relatorios.renderizar();
-        } else {
-          this.renderizarEmBreve('Relatórios');
-        }
-      } 
-      else if (pagina === 'fornecedores') {
-        if (typeof fornecedores !== 'undefined') {
-          console.log('✅ Renderizando Fornecedores');
-          fornecedores.renderizar();
-        } else {
-          this.renderizarEmBreve('Fornecedores');
-        }
-      } 
-      else if (pagina === 'configuracoes') {
-        if (typeof configuracoes !== 'undefined') {
-          console.log('✅ Renderizando Configurações');
-          configuracoes.renderizar();
-        } else {
-          this.renderizarEmBreve('Configurações');
-        }
-      } 
-      else {
-        console.warn('⚠️ Página desconhecida:', pagina);
+      } else if (pagina === 'historico' && typeof historico !== 'undefined') {
+        historico.renderizar();
+      } else if (pagina === 'relatorios' && typeof relatorios !== 'undefined') {
+        relatorios.renderizar();
+      } else if (pagina === 'fornecedores' && typeof fornecedores !== 'undefined') {
+        fornecedores.renderizar();
+      } else if (pagina === 'configuracoes' && typeof configuracoes !== 'undefined') {
+        configuracoes.renderizar();
+      } else {
         this.renderizarEmBreve(pagina);
       }
     } catch (error) {
-      console.error('❌ Erro ao renderizar página:', error);
+      console.error('❌ Erro ao renderizar:', error);
       this.renderizarErro(error.message);
     }
     
@@ -196,31 +129,22 @@ const app = {
   renderizarErro(mensagem) {
     document.getElementById('content').innerHTML = `
       <div class="card" style="text-align: center; padding: 60px 20px;">
-        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #dc2626; margin-bottom: 24px;"></i>
-        <h2 style="margin-bottom: 16px;">Erro ao carregar</h2>
-        <p style="color: #6b7280; margin-bottom: 24px;">${mensagem}</p>
-        <button class="btn btn-primary" onclick="app.mudarPagina('estoque')">
-          <i class="fas fa-arrow-left"></i> Voltar para Estoque
-        </button>
+        <i class="fas fa-exclamation-triangle" style="font-size: 64px; color: #dc2626;"></i>
+        <h2>Erro ao carregar</h2>
+        <p>${mensagem}</p>
+        <button class="btn btn-primary" onclick="app.mudarPagina('estoque')">Voltar</button>
       </div>
     `;
   },
   
   renderizarEmBreve(pagina) {
-    const titulos = {
-      relatorios: 'Relatórios',
-      fornecedores: 'Fornecedores',
-      configuracoes: 'Configurações'
-    };
-    
+    const titulos = { relatorios: 'Relatórios', fornecedores: 'Fornecedores', configuracoes: 'Configurações' };
     document.getElementById('content').innerHTML = `
       <div class="card" style="text-align: center; padding: 60px 20px;">
-        <i class="fas fa-tools" style="font-size: 64px; color: #cbd5e1; margin-bottom: 24px;"></i>
-        <h2 style="margin-bottom: 16px;">${titulos[pagina] || pagina}</h2>
-        <p style="color: #6b7280; margin-bottom: 24px;">Este módulo estará disponível em breve!</p>
-        <button class="btn btn-primary" onclick="app.mudarPagina('estoque')">
-          <i class="fas fa-arrow-left"></i> Voltar para Estoque
-        </button>
+        <i class="fas fa-tools" style="font-size: 64px; color: #cbd5e1;"></i>
+        <h2>${titulos[pagina] || pagina}</h2>
+        <p>Em breve!</p>
+        <button class="btn btn-primary" onclick="app.mudarPagina('estoque')">Voltar</button>
       </div>
     `;
   },
@@ -307,14 +231,15 @@ const app = {
     setTimeout(() => document.getElementById('nomeInput')?.focus(), 100);
   },
   
-  cadastrarProduto(e) {
+  // ========== CADASTRAR PRODUTO (CORRIGIDO) ==========
+  async cadastrarProduto(e) {
     e.preventDefault();
     
     const nome = document.getElementById('nomeInput').value.trim();
     const codigo = document.getElementById('codigoInput').value.trim();
     const preco = parseFloat(document.getElementById('precoInput').value);
     const quantidade = parseInt(document.getElementById('qtdInput').value);
-    const minimo = parseInt(document.getElementById('minInput').value);
+    const minimo = parseInt(document.getElementById('minInput').value) || 10;
     const fornecedor = document.getElementById('fornecedorInput')?.value || '';
     const categoria = document.getElementById('categoriaInput')?.value || 'Geral';
     
@@ -328,24 +253,32 @@ const app = {
       return;
     }
     
-    if (storage.produtos.find(p => p.codigo === codigo)) {
+    // Verificar se já existe
+    const existente = storage.produtos.find(p => p.codigo === codigo);
+    if (existente) {
       this.mostrarToast('Código já cadastrado!', 'error');
       return;
     }
     
-    storage.adicionarProduto({ 
+    console.log('📦 Cadastrando produto:', { nome, codigo, preco, quantidade });
+    
+    // Salvar no Supabase
+    await storage.adicionarProduto({ 
       nome, 
       codigo, 
       preco, 
       quantidade, 
       estoqueMinimo: minimo,
       fornecedor,
-      categoria,
-      dataCadastro: new Date().toISOString()
+      categoria
     });
     
     this.mostrarToast('Produto cadastrado com sucesso!', 'success');
-    this.mudarPagina('estoque');
+    
+    // Aguardar um pouco e atualizar a página de estoque
+    setTimeout(() => {
+      this.mudarPagina('estoque');
+    }, 200);
   },
   
   mostrarToast(mensagem, tipo = 'info') {
@@ -414,24 +347,17 @@ style.textContent = `
     from { opacity: 1; transform: translateX(0); }
     to { opacity: 0; transform: translateX(100%); }
   }
-  
-  #content {
-    transition: opacity 0.15s, transform 0.15s;
-  }
 `;
 document.head.appendChild(style);
 
-// Fechar sidebar ao redimensionar para desktop
 window.addEventListener('resize', () => {
   if (window.innerWidth > 768) {
     app.closeSidebar();
-    document.body.style.overflow = '';
   }
 });
 
-// Iniciar aplicação
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('🚀 DOM Carregado - Iniciando App...');
+  console.log('🚀 Iniciando App...');
   app.inicializar();
   
   const ultimaPagina = localStorage.getItem('ultimaPagina');
@@ -440,67 +366,4 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// Expor app globalmente
 window.app = app;
-
-// Função de teste de conexão (útil para debug)
-window.verificarConexao = function() {
-  const resultado = document.createElement('div');
-  resultado.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    z-index: 99999;
-    max-width: 500px;
-    max-height: 400px;
-    overflow: auto;
-  `;
-  
-  resultado.innerHTML = '<h3>🔍 Testando conexão...</h3>';
-  document.body.appendChild(resultado);
-  
-  if (typeof db !== 'undefined') {
-    db.buscarProdutos()
-      .then(produtos => {
-        if (produtos.length > 0) {
-          let html = '<h3 style="color: #059669;">✅ CONEXÃO FUNCIONANDO!</h3>';
-          html += `<p><strong>${produtos.length} produtos encontrados:</strong></p>`;
-          html += '<ul style="text-align: left;">';
-          produtos.forEach(p => {
-            html += `<li>${p.nome} - R$ ${p.preco} (Estoque: ${p.quantidade})</li>`;
-          });
-          html += '</ul>';
-          resultado.innerHTML = html;
-        } else {
-          resultado.innerHTML = '<h3 style="color: #d97706;">⚠️ Conexão OK, mas ZERO produtos!</h3><p>Execute o SQL para inserir produtos.</p>';
-        }
-        
-        const btn = document.createElement('button');
-        btn.textContent = 'Fechar';
-        btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
-        btn.onclick = () => resultado.remove();
-        resultado.appendChild(btn);
-      })
-      .catch(erro => {
-        resultado.innerHTML = `<h3 style="color: #dc2626;">❌ ERRO NA CONEXÃO</h3><p>${erro.message}</p>`;
-        
-        const btn = document.createElement('button');
-        btn.textContent = 'Fechar';
-        btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
-        btn.onclick = () => resultado.remove();
-        resultado.appendChild(btn);
-      });
-  } else {
-    resultado.innerHTML = '<h3 style="color: #dc2626;">❌ db não encontrado</h3><p>Verifique se o supabase.js foi carregado.</p>';
-    const btn = document.createElement('button');
-    btn.textContent = 'Fechar';
-    btn.style.cssText = 'margin-top: 20px; padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer;';
-    btn.onclick = () => resultado.remove();
-    resultado.appendChild(btn);
-  }
-};
