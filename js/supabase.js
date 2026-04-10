@@ -151,75 +151,72 @@ window.db = {
   
   // ========== VENDAS ==========
   async salvarVenda(venda) {
-    console.log('💾 Salvando venda no Supabase...');
+  console.log('💾 Salvando venda no Supabase:', venda);
+  
+  try {
+    // 1. Inserir a venda
+    const { data: vendaData, error: vendaError } = await window.supabaseClient
+      .from('vendas')
+      .insert({
+        total: venda.total,
+        cliente: venda.cliente || 'Cliente Balcão',
+        forma_pagamento: venda.forma_pagamento || 'dinheiro' // 👈 SALVAR FORMA DE PGTO
+      })
+      .select()
+      .single();
     
-    try {
-      // 1. Inserir a venda
-      const { data: vendaData, error: vendaError } = await window.supabaseClient
-        .from('vendas')
-        .insert({
-          total: venda.total,
-          cliente: venda.cliente || 'Cliente Balcão'
-        })
-        .select()
+    if (vendaError) {
+      console.error('❌ Erro ao salvar venda:', vendaError);
+      throw vendaError;
+    }
+    
+    console.log('✅ Venda salva, ID:', vendaData.id);
+    
+    // 2. Inserir os itens
+    if (venda.itens && venda.itens.length > 0) {
+      const itensParaInserir = venda.itens.map(item => ({
+        venda_id: vendaData.id,
+        produto_id: item.id,
+        nome_produto: item.nome || 'Produto', // 👈 SALVAR NOME DO PRODUTO
+        quantidade: item.quantidade,
+        preco_unitario: item.preco || item.preco_unitario || 0
+      }));
+      
+      const { error: itensError } = await window.supabaseClient
+        .from('itens_venda')
+        .insert(itensParaInserir);
+      
+      if (itensError) {
+        console.error('❌ Erro ao salvar itens:', itensError);
+      } else {
+        console.log(`✅ ${itensParaInserir.length} itens salvos`);
+      }
+    }
+    
+    // 3. Atualizar estoque
+    for (const item of venda.itens) {
+      const { data: produto } = await window.supabaseClient
+        .from('produtos')
+        .select('quantidade')
+        .eq('id', item.id)
         .single();
       
-      if (vendaError) {
-        console.error('❌ Erro ao salvar venda:', vendaError);
-        throw vendaError;
-      }
-      
-      console.log('✅ Venda salva, ID:', vendaData.id);
-      
-      // 2. Inserir os itens da venda
-      if (venda.itens && venda.itens.length > 0) {
-        const itensParaInserir = venda.itens.map(item => ({
-          venda_id: vendaData.id,
-          produto_id: item.id,
-          nome_produto: item.nome,
-          quantidade: item.quantidade,
-          preco_unitario: item.preco
-        }));
-        
-        const { error: itensError } = await window.supabaseClient
-          .from('itens_venda')
-          .insert(itensParaInserir);
-        
-        if (itensError) {
-          console.error('❌ Erro ao salvar itens:', itensError);
-        } else {
-          console.log(`✅ ${itensParaInserir.length} itens salvos`);
-        }
-      }
-      
-      // 3. Atualizar estoque dos produtos
-      for (const item of venda.itens) {
-        // Buscar quantidade atual
-        const { data: produto } = await window.supabaseClient
+      if (produto) {
+        const novaQuantidade = produto.quantidade - item.quantidade;
+        await window.supabaseClient
           .from('produtos')
-          .select('quantidade')
-          .eq('id', item.id)
-          .single();
-        
-        if (produto) {
-          const novaQuantidade = produto.quantidade - item.quantidade;
-          
-          await window.supabaseClient
-            .from('produtos')
-            .update({ quantidade: novaQuantidade })
-            .eq('id', item.id);
-          
-          console.log(`📦 Estoque atualizado: ${item.nome} = ${novaQuantidade}`);
-        }
+          .update({ quantidade: novaQuantidade })
+          .eq('id', item.id);
       }
-      
-      return vendaData;
-      
-    } catch (error) {
-      console.error('❌ Erro ao processar venda:', error);
-      throw error;
     }
-  },
+    
+    return vendaData;
+    
+  } catch (error) {
+    console.error('❌ Erro ao processar venda:', error);
+    throw error;
+  }
+},
   
   async buscarVendas(limite = 100) {
     console.log('🔍 Buscando vendas do Supabase...');

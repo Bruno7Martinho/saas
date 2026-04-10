@@ -1,4 +1,5 @@
-// storage.js - Versão CORRIGIDA com Supabase
+// storage.js - CORRIGIDO (salva forma de pagamento e itens corretamente)
+
 const storage = {
   produtos: [],
   vendas: [],
@@ -7,18 +8,15 @@ const storage = {
     console.log('🔄 Carregando dados do Supabase...');
     
     try {
-      // Verificar se db existe
       if (!window.db) {
-        console.error('❌ db não encontrado! Verifique o supabase.js');
+        console.error('❌ db não encontrado!');
         this.carregarFallback();
         return;
       }
       
-      // Buscar produtos do Supabase
       this.produtos = await window.db.buscarProdutos();
       console.log(`✅ ${this.produtos.length} produtos carregados`);
       
-      // Buscar vendas (se a função existir)
       if (window.db.buscarVendas) {
         this.vendas = await window.db.buscarVendas(100);
         console.log(`✅ ${this.vendas.length} vendas carregadas`);
@@ -35,7 +33,7 @@ const storage = {
   },
   
   carregarFallback() {
-    console.log('📦 Carregando dados locais (fallback)...');
+    console.log('📦 Carregando dados locais...');
     const dados = localStorage.getItem('conveniencia_data');
     if (dados) {
       try {
@@ -47,7 +45,6 @@ const storage = {
         this.vendas = [];
       }
     } else {
-      // Dados de exemplo se não tiver nada
       this.produtos = [
         { id: '1', nome: 'Água Mineral 500ml', codigo: '7891234567890', preco: 2.50, quantidade: 45, estoqueMinimo: 10 },
         { id: '2', nome: 'Refrigerante Lata', codigo: '7892345678901', preco: 4.99, quantidade: 20, estoqueMinimo: 15 },
@@ -57,7 +54,6 @@ const storage = {
   },
   
   salvar() {
-    // Backup local
     localStorage.setItem('conveniencia_data', JSON.stringify({
       produtos: this.produtos,
       vendas: this.vendas
@@ -81,50 +77,24 @@ const storage = {
   
   async adicionarProduto(produto) {
     try {
-      // Salvar no Supabase
       if (window.db && window.db.adicionarProduto) {
         const novo = await window.db.adicionarProduto(produto);
-        
         if (novo) {
-          // Adicionar à lista local
-          this.produtos.push({
-            ...produto,
-            id: novo.id || Date.now().toString()
-          });
+          this.produtos.push({ ...produto, id: novo.id || Date.now().toString() });
           this.salvar();
           this.atualizarStats();
           return novo;
         }
-      } else {
-        throw new Error('db não disponível');
       }
     } catch (error) {
-      console.error('⚠️ Erro ao salvar no Supabase, usando localStorage:', error.message);
-      
-      // Fallback local
-      produto.id = Date.now().toString();
-      this.produtos.push(produto);
-      this.salvar();
-      this.atualizarStats();
+      console.error('⚠️ Erro ao salvar no Supabase:', error.message);
     }
     
+    produto.id = Date.now().toString();
+    this.produtos.push(produto);
+    this.salvar();
+    this.atualizarStats();
     return null;
-  },
-  
-  async atualizarProduto(id, dados) {
-    try {
-      if (window.db && window.db.atualizarProduto) {
-        await window.db.atualizarProduto(id, dados);
-      }
-      
-      const index = this.produtos.findIndex(p => p.id === id);
-      if (index !== -1) {
-        this.produtos[index] = { ...this.produtos[index], ...dados };
-        this.salvar();
-      }
-    } catch (error) {
-      console.error('⚠️ Erro ao atualizar:', error.message);
-    }
   },
   
   async removerProduto(id) {
@@ -132,79 +102,97 @@ const storage = {
       if (window.db && window.db.removerProduto) {
         await window.db.removerProduto(id);
       }
-      
-      this.produtos = this.produtos.filter(p => p.id !== id);
-      this.salvar();
-      this.atualizarStats();
     } catch (error) {
       console.error('⚠️ Erro ao remover:', error.message);
     }
+    
+    this.produtos = this.produtos.filter(p => p.id !== id);
+    this.salvar();
+    this.atualizarStats();
   },
   
   async adicionarVenda(venda) {
+    console.log('🛒 Salvando venda:', venda);
+    
     try {
+      // Garantir que os itens tenham nome
+      const itensFormatados = venda.itens.map(item => ({
+        id: item.id,
+        nome: item.nome || 'Produto',
+        quantidade: item.quantidade,
+        preco_unitario: item.preco || item.preco_unitario || 0
+      }));
+      
+      const vendaFormatada = {
+        ...venda,
+        itens: itensFormatados,
+        forma_pagamento: venda.forma_pagamento || 'dinheiro',
+        cliente: venda.cliente || 'Cliente Balcão'
+      };
+      
+      console.log('📦 Venda formatada:', vendaFormatada);
+      
       if (window.db && window.db.salvarVenda) {
-        const nova = await window.db.salvarVenda(venda);
+        const nova = await window.db.salvarVenda(vendaFormatada);
         
         if (nova) {
-          venda.id = nova.id?.toString() || 'v' + Date.now();
-          venda.data = nova.created_at || new Date().toISOString();
-          this.vendas.push(venda);
+          vendaFormatada.id = nova.id?.toString() || 'v' + Date.now();
+          vendaFormatada.data = nova.created_at || new Date().toISOString();
+          this.vendas.push(vendaFormatada);
           this.salvar();
           this.atualizarStats();
           
-          // Atualizar estoque dos produtos vendidos
-          await this.atualizarEstoqueVenda(venda.itens);
+          // Atualizar estoque
+          for (const item of venda.itens) {
+            const produto = this.produtos.find(p => p.id === item.id);
+            if (produto) {
+              produto.quantidade -= item.quantidade;
+            }
+          }
           
-          return venda;
+          console.log('✅ Venda salva com sucesso!');
+          return vendaFormatada;
         }
-      } else {
-        throw new Error('db não disponível');
       }
+      
+      throw new Error('Supabase não disponível');
+      
     } catch (error) {
       console.error('⚠️ Erro ao salvar venda, usando localStorage:', error.message);
       
       // Fallback local
-      venda.id = 'v' + Date.now();
-      venda.data = new Date().toISOString();
-      this.vendas.push(venda);
+      const vendaLocal = {
+        ...venda,
+        id: 'v' + Date.now(),
+        data: new Date().toISOString(),
+        forma_pagamento: venda.forma_pagamento || 'dinheiro',
+        itens: venda.itens.map(item => ({
+          ...item,
+          nome: item.nome || 'Produto',
+          preco_unitario: item.preco || 0
+        }))
+      };
       
-      // Atualizar estoque local
-      venda.itens.forEach(item => {
+      this.vendas.push(vendaLocal);
+      
+      // Atualizar estoque
+      for (const item of venda.itens) {
         const produto = this.produtos.find(p => p.id === item.id);
         if (produto) produto.quantidade -= item.quantidade;
-      });
+      }
       
       this.salvar();
       this.atualizarStats();
+      
+      app.mostrarToast('Venda salva localmente', 'warning');
+      return vendaLocal;
     }
-    
-    return null;
   },
   
-  async atualizarEstoqueVenda(itens) {
-    for (const item of itens) {
-      const produto = this.produtos.find(p => p.id === item.id);
-      if (produto) {
-        produto.quantidade -= item.quantidade;
-        
-        // Atualizar no Supabase
-        if (window.db && window.db.atualizarProduto) {
-          await window.db.atualizarProduto(item.id, {
-            quantidade: produto.quantidade
-          });
-        }
-      }
-    }
-    this.salvar();
-  },
-  
-  // Buscar produto por código de barras
   buscarPorCodigo(codigo) {
     return this.produtos.find(p => p.codigo === codigo);
   },
   
-  // Buscar produto por ID
   buscarPorId(id) {
     return this.produtos.find(p => p.id === id);
   }

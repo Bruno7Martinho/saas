@@ -1,10 +1,9 @@
-// historico.js - Histórico de Vendas (CORRIGIDO com forma de pagamento)
+// historico.js - CORRIGIDO com Cupom Fiscal NFC-e e forma de pagamento
 
 const historico = {
   vendasFiltradas: [],
   
   async renderizar() {
-    // Mostrar loading
     document.getElementById('content').innerHTML = `
       <div class="card" style="text-align: center; padding: 60px;">
         <i class="fas fa-spinner fa-spin" style="font-size: 48px; color: #2563eb;"></i>
@@ -12,10 +11,7 @@ const historico = {
       </div>
     `;
     
-    // Carregar vendas
     await this.carregarVendas();
-    
-    // Renderizar tela
     this.renderizarTela();
   },
   
@@ -41,7 +37,6 @@ const historico = {
     const totalVendas = this.vendasFiltradas.length;
     const faturamentoTotal = this.vendasFiltradas.reduce((acc, v) => acc + (v.total || 0), 0);
     
-    // Vendas de hoje
     const hoje = new Date().toDateString();
     const vendasHoje = this.vendasFiltradas.filter(v => {
       if (!v.data) return false;
@@ -49,7 +44,6 @@ const historico = {
     });
     const faturamentoHoje = vendasHoje.reduce((acc, v) => acc + (v.total || 0), 0);
     
-    // Totais por forma de pagamento
     const totaisPagamento = {
       dinheiro: 0,
       cartao_credito: 0,
@@ -75,14 +69,13 @@ const historico = {
             <button class="btn btn-outline" onclick="historico.recarregar()">
               <i class="fas fa-sync-alt"></i> Atualizar
             </button>
-            <input type="text" id="buscaHistorico" placeholder="Buscar por data, valor ou cliente..." style="width: 250px;">
+            <input type="text" id="buscaHistorico" placeholder="Buscar..." style="width: 200px;">
             <button class="btn btn-outline" onclick="historico.exportar()">
               <i class="fas fa-download"></i> Exportar
             </button>
           </div>
         </div>
         
-        <!-- Cards de resumo -->
         <div class="grid-4 mb-4">
           <div class="stat-card">
             <div class="stat-label">Total de Vendas</div>
@@ -103,10 +96,9 @@ const historico = {
           </div>
         </div>
         
-        <!-- Resumo por forma de pagamento -->
         <div class="card mb-4" style="padding: 16px;">
           <h4 style="margin-bottom: 16px;"><i class="fas fa-credit-card"></i> Resumo por Forma de Pagamento</h4>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <i class="fas fa-money-bill-wave" style="color: #10b981;"></i>
               <span><strong>Dinheiro:</strong> R$ ${totaisPagamento.dinheiro.toFixed(2)}</span>
@@ -126,23 +118,13 @@ const historico = {
           </div>
         </div>
         
-        <!-- Filtros rápidos -->
         <div class="flex mb-4" style="gap: 8px;">
-          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('hoje')">
-            <i class="fas fa-calendar-day"></i> Hoje
-          </button>
-          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('semana')">
-            <i class="fas fa-calendar-week"></i> Esta Semana
-          </button>
-          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('mes')">
-            <i class="fas fa-calendar-alt"></i> Este Mês
-          </button>
-          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('todos')">
-            <i class="fas fa-list"></i> Todas
-          </button>
+          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('hoje')">📅 Hoje</button>
+          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('semana')">📆 Semana</button>
+          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('mes')">📊 Mês</button>
+          <button class="btn btn-sm btn-outline" onclick="historico.filtrar('todos')">📋 Todas</button>
         </div>
         
-        <!-- Lista de vendas -->
         <div class="table-wrapper">
           <table id="tabelaHistorico">
             <thead>
@@ -168,20 +150,9 @@ const historico = {
   
   renderizarLinhas(vendas) {
     if (!vendas || vendas.length === 0) {
-      return `
-        <tr>
-          <td colspan="6" style="text-align: center; padding: 40px; color: #6b7280;">
-            <i class="fas fa-receipt" style="font-size: 48px; margin-bottom: 16px;"></i>
-            <p>Nenhuma venda registrada</p>
-            <button class="btn btn-primary" onclick="app.mudarPagina('vendas')">
-              Ir para Vendas
-            </button>
-          </td>
-        </tr>
-      `;
+      return `<tr><td colspan="6" style="text-align: center; padding: 40px;">Nenhuma venda registrada</td></tr>`;
     }
     
-    // Ordenar por data (mais recente primeiro)
     const vendasOrdenadas = [...vendas].sort((a, b) => {
       if (!a.data) return 1;
       if (!b.data) return -1;
@@ -203,7 +174,7 @@ const historico = {
           <td><strong>R$ ${(v.total || 0).toFixed(2)}</strong></td>
           <td>
             <button class="btn btn-sm btn-outline" onclick="historico.verDetalhes('${v.id}')">
-              <i class="fas fa-eye"></i> Ver
+              <i class="fas fa-receipt"></i> Cupom
             </button>
           </td>
         </tr>
@@ -229,11 +200,8 @@ const historico = {
         const data = v.data ? new Date(v.data).toLocaleString('pt-BR').toLowerCase() : '';
         const total = (v.total || 0).toString();
         const cliente = (v.cliente || '').toLowerCase();
-        const forma = this.formatarFormaPagamento(v.forma_pagamento || '').toLowerCase();
-        
-        return data.includes(termo) || total.includes(termo) || cliente.includes(termo) || forma.includes(termo);
+        return data.includes(termo) || total.includes(termo) || cliente.includes(termo);
       });
-      
       document.querySelector('#tabelaHistorico tbody').innerHTML = this.renderizarLinhas(filtradas);
     });
   },
@@ -250,22 +218,14 @@ const historico = {
     
     if (periodo === 'hoje') {
       const hojeStr = hoje.toDateString();
-      filtradas = this.vendasFiltradas.filter(v => {
-        if (!v.data) return false;
-        return new Date(v.data).toDateString() === hojeStr;
-      });
+      filtradas = this.vendasFiltradas.filter(v => v.data && new Date(v.data).toDateString() === hojeStr);
     } else if (periodo === 'semana') {
       const umaSemanaAtras = new Date();
       umaSemanaAtras.setDate(hoje.getDate() - 7);
-      
-      filtradas = this.vendasFiltradas.filter(v => {
-        if (!v.data) return false;
-        return new Date(v.data) >= umaSemanaAtras;
-      });
+      filtradas = this.vendasFiltradas.filter(v => v.data && new Date(v.data) >= umaSemanaAtras);
     } else if (periodo === 'mes') {
       const mesAtual = hoje.getMonth();
       const anoAtual = hoje.getFullYear();
-      
       filtradas = this.vendasFiltradas.filter(v => {
         if (!v.data) return false;
         const dataVenda = new Date(v.data);
@@ -283,54 +243,146 @@ const historico = {
     const venda = this.vendasFiltradas.find(v => v.id === vendaId);
     if (!venda) return;
     
-    const data = venda.data ? new Date(venda.data).toLocaleString('pt-BR') : 'N/A';
+    this.mostrarCupomFiscal(venda);
+  },
+  
+  // ========== CUPOM FISCAL ESTILO NFC-e ==========
+  mostrarCupomFiscal(venda) {
+    const data = venda.data ? new Date(venda.data) : new Date();
+    const dataFormatada = data.toLocaleDateString('pt-BR');
+    const horaFormatada = data.toLocaleTimeString('pt-BR');
     const formaPgto = this.formatarFormaPagamento(venda.forma_pagamento || 'dinheiro');
+    const numeroCupom = String(venda.id || Date.now()).slice(-6).padStart(6, '0');
+    
+    // Calcular totais
+    const subtotal = venda.itens ? venda.itens.reduce((acc, i) => acc + ((i.preco_unitario || i.preco || 0) * i.quantidade), 0) : 0;
+    const total = venda.total || subtotal;
     
     let itensHtml = '';
     if (venda.itens && venda.itens.length > 0) {
-      itensHtml = venda.itens.map(item => `
-        <div style="display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #e5e7eb;">
-          <span>
-            <strong>${item.quantidade}x</strong> ${item.nome || 'Produto'}<br>
-            <small style="color: #6b7280;">R$ ${(item.preco_unitario || item.preco || 0).toFixed(2)} cada</small>
-          </span>
-          <span style="font-weight: 600;">R$ ${((item.preco_unitario || item.preco || 0) * item.quantidade).toFixed(2)}</span>
-        </div>
-      `).join('');
-    } else {
-      itensHtml = '<p style="color: #6b7280; text-align: center; padding: 20px;">Sem itens registrados</p>';
+      itensHtml = venda.itens.map(item => {
+        const preco = item.preco_unitario || item.preco || 0;
+        const subtotalItem = preco * item.quantidade;
+        return `
+          <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #d1d5db;">
+            <div style="flex: 1;">
+              <span style="font-weight: 600;">${item.nome || 'Produto'}</span><br>
+              <span style="font-size: 0.85rem; color: #6b7280;">
+                ${item.quantidade} x R$ ${preco.toFixed(2)}
+              </span>
+            </div>
+            <span style="font-weight: 600;">R$ ${subtotalItem.toFixed(2)}</span>
+          </div>
+        `;
+      }).join('');
     }
     
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-      <div class="modal" style="max-width: 500px;">
-        <h3 style="margin-bottom: 20px;"><i class="fas fa-receipt"></i> Detalhes da Venda</h3>
-        
-        <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin-bottom: 20px;">
-          <p><strong>📅 Data:</strong> ${data}</p>
-          <p><strong>👤 Cliente:</strong> ${venda.cliente || 'Cliente Balcão'}</p>
-          <p><strong>💳 Forma de Pagamento:</strong> ${formaPgto}</p>
-          <p><strong>💰 Total:</strong> <span style="font-size: 1.2rem; color: #059669;">R$ ${(venda.total || 0).toFixed(2)}</span></p>
+      <div class="modal" style="max-width: 420px; padding: 0; overflow: hidden;">
+        <!-- Cabeçalho do Cupom -->
+        <div style="background: linear-gradient(135deg, #1f2937 0%, #374151 100%); color: white; padding: 20px; text-align: center;">
+          <i class="fas fa-receipt" style="font-size: 32px; margin-bottom: 8px;"></i>
+          <h2 style="margin: 0; font-size: 1.3rem;">CUPOM FISCAL</h2>
+          <p style="opacity: 0.8; margin-top: 4px;">NFC-e Nº ${numeroCupom}</p>
         </div>
         
-        <h4 style="margin-bottom: 12px;">📋 Itens da Venda</h4>
-        <div style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
-          ${itensHtml}
+        <!-- Informações da Loja -->
+        <div style="padding: 20px; text-align: center; border-bottom: 1px dashed #d1d5db;">
+          <h3 style="margin: 0 0 8px 0;">🏪 MINHA CONVENIÊNCIA</h3>
+          <p style="color: #6b7280; font-size: 0.9rem; margin: 0;">
+            CNPJ: 00.000.000/0001-00<br>
+            Av. Principal, 123 - Centro<br>
+            São Paulo - SP
+          </p>
         </div>
         
-        <div style="border-top: 2px solid #e5e7eb; padding-top: 16px; display: flex; justify-content: space-between;">
-          <span style="font-weight: 600;">Total de itens:</span>
-          <span>${venda.itens ? venda.itens.reduce((acc, i) => acc + i.quantidade, 0) : 0}</span>
+        <!-- Data e Cliente -->
+        <div style="padding: 16px 20px; background: #f9fafb;">
+          <div style="display: flex; justify-content: space-between;">
+            <span><i class="far fa-calendar"></i> ${dataFormatada}</span>
+            <span><i class="far fa-clock"></i> ${horaFormatada}</span>
+          </div>
+          <div style="margin-top: 8px;">
+            <i class="far fa-user"></i> Cliente: ${venda.cliente || 'Cliente Balcão'}
+          </div>
         </div>
         
-        <button class="btn btn-primary w-full mt-4" onclick="this.closest('.modal-overlay').remove()">
-          <i class="fas fa-check"></i> Fechar
-        </button>
+        <!-- Itens -->
+        <div style="padding: 20px;">
+          <h4 style="margin-bottom: 16px;">📋 ITENS</h4>
+          <div style="max-height: 300px; overflow-y: auto;">
+            ${itensHtml || '<p style="color: #6b7280; text-align: center;">Nenhum item</p>'}
+          </div>
+        </div>
+        
+        <!-- Totais -->
+        <div style="padding: 16px 20px; background: #f9fafb; border-top: 2px solid #d1d5db;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Subtotal:</span>
+            <span>R$ ${subtotal.toFixed(2)}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span>Desconto:</span>
+            <span>R$ 0,00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: 700; margin-top: 12px; padding-top: 12px; border-top: 2px solid #d1d5db;">
+            <span>TOTAL:</span>
+            <span style="color: #059669;">R$ ${total.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <!-- Forma de Pagamento -->
+        <div style="padding: 16px 20px; text-align: center;">
+          <p style="margin: 0;">
+            <i class="fas fa-credit-card"></i> 
+            Forma de Pagamento: <strong>${formaPgto}</strong>
+          </p>
+        </div>
+        
+        <!-- QR Code e Chave de Acesso -->
+        <div style="padding: 20px; text-align: center; border-top: 1px dashed #d1d5db;">
+          <div style="background: white; padding: 12px; border-radius: 8px; display: inline-block; margin-bottom: 12px;">
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent('NFCe:' + numeroCupom + '|' + total.toFixed(2))}" 
+                 alt="QR Code" style="width: 100px; height: 100px;">
+          </div>
+          <p style="font-size: 0.75rem; color: #6b7280; word-break: break-all;">
+            <strong>Chave de Acesso:</strong><br>
+            ${this.gerarChaveAcesso(numeroCupom, data)}
+          </p>
+          <p style="font-size: 0.7rem; color: #9ca3af; margin-top: 12px;">
+            Consulte pela chave de acesso em:<br>
+            www.sefaz.sp.gov.br/nfce
+          </p>
+        </div>
+        
+        <!-- Ações -->
+        <div style="padding: 16px 20px; display: flex; gap: 12px; border-top: 1px solid #e5e7eb;">
+          <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="historico.imprimirCupom()">
+            <i class="fas fa-print"></i> Imprimir
+          </button>
+          <button class="btn btn-primary btn-sm" style="flex: 1;" onclick="this.closest('.modal-overlay').remove()">
+            <i class="fas fa-check"></i> Fechar
+          </button>
+        </div>
       </div>
     `;
     
     document.body.appendChild(modal);
+  },
+  
+  gerarChaveAcesso(numero, data) {
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    const random = Math.random().toString(36).substring(2, 10).toUpperCase();
+    return `3525${ano}${mes}${dia}${numero}${random}12345678901234`;
+  },
+  
+  imprimirCupom() {
+    app.mostrarToast('Enviando para impressora...', 'info');
+    window.print();
   },
   
   exportar() {

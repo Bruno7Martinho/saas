@@ -212,50 +212,56 @@ const vendas = {
   },
 
   async finalizar() {
-    for (let item of this.carrinho) {
-      const produto = storage.produtos.find(p => p.id === item.id);
-      if (!produto || produto.quantidade < item.quantidade) {
-        app.mostrarToast(`Estoque insuficiente para ${item.nome}`, 'error');
-        return;
-      }
+  // Verificar estoque
+  for (let item of this.carrinho) {
+    const produto = storage.produtos.find(p => p.id === item.id);
+    if (!produto || produto.quantidade < item.quantidade) {
+      app.mostrarToast(`Estoque insuficiente para ${item.nome}`, 'error');
+      return;
     }
+  }
 
-    const total = this.carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
-    const formaPagamento = document.getElementById('formaPagamento')?.value || 'dinheiro';
-    const cliente = document.getElementById('clienteVenda')?.value.trim() || 'Cliente Balcão';
+  const total = this.carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
+  const formaPagamento = document.getElementById('formaPagamento')?.value || 'dinheiro';
+  const cliente = document.getElementById('clienteVenda')?.value.trim() || 'Cliente Balcão';
 
-    if (formaPagamento === 'pix') {
-      const confirmar = await this.mostrarQRCodePIX(total);
-      if (!confirmar) return;
-    } else {
-      const confirmar = await this.confirmarVenda(total, formaPagamento, cliente);
-      if (!confirmar) return;
-    }
+  console.log('📝 Finalizando venda:', { total, formaPagamento, cliente });
 
-    try {
-      await storage.adicionarVenda({
-        total,
-        cliente,
-        forma_pagamento: formaPagamento,
-        itens: this.carrinho.map(i => ({
-          id: i.id,
-          nome: i.nome,
-          quantidade: i.quantidade,
-          preco: i.preco
-        }))
-      });
+  if (formaPagamento === 'pix') {
+    const confirmar = await this.mostrarQRCodePIX(total);
+    if (!confirmar) return;
+  } else {
+    const confirmar = await this.confirmarVenda(total, formaPagamento, cliente);
+    if (!confirmar) return;
+  }
 
-      this.mostrarResumoVenda(total, formaPagamento, cliente);
-      
-      app.mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
-      this.carrinho = [];
-      this.renderizar();
-      
-    } catch (error) {
-      console.error('Erro ao finalizar venda:', error);
-      app.mostrarToast('Erro ao finalizar venda. Tente novamente.', 'error');
-    }
-  },
+  try {
+    // Salvar venda com os dados CORRETOS
+    const vendaSalva = await storage.adicionarVenda({
+      total,
+      cliente,
+      forma_pagamento: formaPagamento, // 👈 FORMA DE PAGAMENTO AQUI
+      itens: this.carrinho.map(i => ({
+        id: i.id,
+        nome: i.nome, // 👈 NOME DO PRODUTO AQUI
+        quantidade: i.quantidade,
+        preco: i.preco
+      }))
+    });
+
+    console.log('✅ Venda salva:', vendaSalva);
+
+    this.mostrarResumoVenda(total, formaPagamento, cliente);
+    
+    app.mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
+    this.carrinho = [];
+    this.renderizar();
+    
+  } catch (error) {
+    console.error('❌ Erro ao finalizar venda:', error);
+    app.mostrarToast('Erro ao finalizar venda. Tente novamente.', 'error');
+  }
+},
 
   confirmarVenda(total, formaPagamento, cliente) {
     return new Promise((resolve) => {
