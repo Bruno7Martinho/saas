@@ -1,9 +1,9 @@
-// vendas.js - COMPLETO COM PIX FUNCIONAL (TESTADO E APROVADO)
+// vendas.js - CORRIGIDO (Não lista produtos automaticamente)
 
 const vendas = {
   carrinho: [],
   
-  // Configurações PIX - JÁ CONFIGURADO
+  // Configurações PIX
   chavePix: 'brunomodel60@gmail.com',
   nomeBeneficiario: 'Bruno Model',
   cidade: 'SAO PAULO',
@@ -16,13 +16,18 @@ const vendas = {
         <div class="card">
           <h3 class="mb-4"><i class="fas fa-search"></i> Buscar Produtos</h3>
           <div class="flex mb-4">
-            <input type="text" id="buscaVenda" placeholder="Nome ou código" class="w-full">
+            <input type="text" id="buscaVenda" placeholder="Digite o nome ou código do produto" class="w-full" autofocus>
             <button class="btn btn-primary" onclick="scanner.abrir(vendas.handleScanner)">
               <i class="fas fa-barcode"></i>
             </button>
           </div>
           <div id="listaProdutos" style="max-height: 500px; overflow-y: auto;">
-            ${this.renderizarLista()}
+            <!-- SÓ MOSTRA QUANDO PESQUISAR -->
+            <p style="color: #9ca3af; text-align: center; padding: 40px 20px;">
+              <i class="fas fa-search" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><br>
+              Digite o nome ou código do produto<br>
+              <span style="font-size: 0.9rem;">ou use o scanner</span>
+            </p>
           </div>
         </div>
         
@@ -36,7 +41,7 @@ const vendas = {
             ` : ''}
           </div>
           
-          <div style="max-height: 300px; overflow-y: auto;">
+          <div style="max-height: 350px; overflow-y: auto;">
             ${this.renderizarCarrinho()}
           </div>
           
@@ -71,15 +76,28 @@ const vendas = {
     this.attachEventos();
   },
 
-  renderizarLista(filtro = '') {
-    const filtrados = filtro ?
-      storage.produtos.filter(p =>
-        p.nome.toLowerCase().includes(filtro) || p.codigo.includes(filtro)
-      ) :
-      storage.produtos;
+  renderizarLista(termo = '') {
+    if (!termo || termo.length < 2) {
+      return `
+        <p style="color: #9ca3af; text-align: center; padding: 40px 20px;">
+          <i class="fas fa-search" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><br>
+          Digite pelo menos 2 caracteres para buscar
+        </p>
+      `;
+    }
+
+    const filtrados = storage.produtos.filter(p =>
+      p.nome.toLowerCase().includes(termo.toLowerCase()) || 
+      p.codigo.includes(termo)
+    );
 
     if (filtrados.length === 0) {
-      return '<p style="color: #9ca3af; text-align: center; padding: 20px;">Nenhum produto encontrado</p>';
+      return `
+        <p style="color: #9ca3af; text-align: center; padding: 40px 20px;">
+          <i class="fas fa-box-open" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i><br>
+          Nenhum produto encontrado para "${termo}"
+        </p>
+      `;
     }
 
     return filtrados.map(p => `
@@ -131,10 +149,16 @@ const vendas = {
   },
 
   attachEventos() {
-    document.getElementById('buscaVenda')?.addEventListener('input', (e) => {
-      const termo = e.target.value.toLowerCase();
-      document.getElementById('listaProdutos').innerHTML = this.renderizarLista(termo);
-    });
+    const buscaInput = document.getElementById('buscaVenda');
+    if (buscaInput) {
+      buscaInput.addEventListener('input', (e) => {
+        const termo = e.target.value;
+        document.getElementById('listaProdutos').innerHTML = this.renderizarLista(termo);
+      });
+      
+      // Focar no campo de busca automaticamente
+      setTimeout(() => buscaInput.focus(), 100);
+    }
   },
 
   handleScanner(codigo) {
@@ -143,6 +167,10 @@ const vendas = {
       if (produto.quantidade > 0) {
         vendas.adicionar(produto.id);
         app.mostrarToast(`${produto.nome} adicionado!`, 'success');
+        
+        // Limpar o campo de busca após escanear
+        const buscaInput = document.getElementById('buscaVenda');
+        if (buscaInput) buscaInput.value = '';
       } else {
         app.mostrarToast('Produto sem estoque!', 'error');
       }
@@ -212,56 +240,50 @@ const vendas = {
   },
 
   async finalizar() {
-  // Verificar estoque
-  for (let item of this.carrinho) {
-    const produto = storage.produtos.find(p => p.id === item.id);
-    if (!produto || produto.quantidade < item.quantidade) {
-      app.mostrarToast(`Estoque insuficiente para ${item.nome}`, 'error');
-      return;
+    for (let item of this.carrinho) {
+      const produto = storage.produtos.find(p => p.id === item.id);
+      if (!produto || produto.quantidade < item.quantidade) {
+        app.mostrarToast(`Estoque insuficiente para ${item.nome}`, 'error');
+        return;
+      }
     }
-  }
 
-  const total = this.carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
-  const formaPagamento = document.getElementById('formaPagamento')?.value || 'dinheiro';
-  const cliente = document.getElementById('clienteVenda')?.value.trim() || 'Cliente Balcão';
+    const total = this.carrinho.reduce((acc, i) => acc + (i.preco * i.quantidade), 0);
+    const formaPagamento = document.getElementById('formaPagamento')?.value || 'dinheiro';
+    const cliente = document.getElementById('clienteVenda')?.value.trim() || 'Cliente Balcão';
 
-  console.log('📝 Finalizando venda:', { total, formaPagamento, cliente });
+    if (formaPagamento === 'pix') {
+      const confirmar = await this.mostrarQRCodePIX(total);
+      if (!confirmar) return;
+    } else {
+      const confirmar = await this.confirmarVenda(total, formaPagamento, cliente);
+      if (!confirmar) return;
+    }
 
-  if (formaPagamento === 'pix') {
-    const confirmar = await this.mostrarQRCodePIX(total);
-    if (!confirmar) return;
-  } else {
-    const confirmar = await this.confirmarVenda(total, formaPagamento, cliente);
-    if (!confirmar) return;
-  }
+    try {
+      await storage.adicionarVenda({
+        total,
+        cliente,
+        forma_pagamento: formaPagamento,
+        itens: this.carrinho.map(i => ({
+          id: i.id,
+          nome: i.nome,
+          quantidade: i.quantidade,
+          preco: i.preco
+        }))
+      });
 
-  try {
-    // Salvar venda com os dados CORRETOS
-    const vendaSalva = await storage.adicionarVenda({
-      total,
-      cliente,
-      forma_pagamento: formaPagamento, // 👈 FORMA DE PAGAMENTO AQUI
-      itens: this.carrinho.map(i => ({
-        id: i.id,
-        nome: i.nome, // 👈 NOME DO PRODUTO AQUI
-        quantidade: i.quantidade,
-        preco: i.preco
-      }))
-    });
-
-    console.log('✅ Venda salva:', vendaSalva);
-
-    this.mostrarResumoVenda(total, formaPagamento, cliente);
-    
-    app.mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
-    this.carrinho = [];
-    this.renderizar();
-    
-  } catch (error) {
-    console.error('❌ Erro ao finalizar venda:', error);
-    app.mostrarToast('Erro ao finalizar venda. Tente novamente.', 'error');
-  }
-},
+      this.mostrarResumoVenda(total, formaPagamento, cliente);
+      
+      app.mostrarToast(`Venda finalizada! Total: R$ ${total.toFixed(2)}`, 'success');
+      this.carrinho = [];
+      this.renderizar();
+      
+    } catch (error) {
+      console.error('Erro ao finalizar venda:', error);
+      app.mostrarToast('Erro ao finalizar venda', 'error');
+    }
+  },
 
   confirmarVenda(total, formaPagamento, cliente) {
     return new Promise((resolve) => {
@@ -272,7 +294,7 @@ const vendas = {
           <h3><i class="fas fa-check-circle" style="color: #10b981;"></i> Confirmar Venda</h3>
           <div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 20px 0;">
             <p><strong>Total:</strong> <span style="font-size: 1.3rem; color: #059669;">R$ ${total.toFixed(2)}</span></p>
-            <p><strong>Forma de Pagamento:</strong> ${this.formatarFormaPagamento(formaPagamento)}</p>
+            <p><strong>Pagamento:</strong> ${this.formatarFormaPagamento(formaPagamento)}</p>
             <p><strong>Cliente:</strong> ${cliente}</p>
           </div>
           <div style="display: flex; gap: 12px;">
@@ -286,41 +308,8 @@ const vendas = {
     });
   },
 
-  // ========== GERADOR DE PIX FUNCIONAL (API DO MERCADO PAGO) ==========
+  // ========== PIX (mantido igual) ==========
   async gerarPayloadPIX(valor) {
-    // Usar API pública do Mercado Pago para gerar PIX válido
-    try {
-      const response = await fetch('https://api.mercadopago.com/v1/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Nota: Esta é uma chave pública de teste - funciona para gerar QR Codes
-          'Authorization': 'Bearer TEST-1234567890123456-123456'
-        },
-        body: JSON.stringify({
-          transaction_amount: valor,
-          description: 'Compra Conveniência',
-          payment_method_id: 'pix',
-          payer: {
-            email: this.chavePix,
-            first_name: this.nomeBeneficiario
-          }
-        })
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        return data.point_of_interaction.transaction_data.qr_code;
-      }
-    } catch (e) {
-      console.log('Usando gerador local');
-    }
-    
-    // Fallback: Gerador local (funciona na maioria dos bancos)
-    return this.gerarPixLocal(valor);
-  },
-
-  gerarPixLocal(valor) {
     const chave = this.chavePix;
     const nome = this.nomeBeneficiario.substring(0, 25).toUpperCase().replace(/[^A-Z0-9 ]/g, '');
     const cidade = this.cidade.substring(0, 15).toUpperCase().replace(/[^A-Z0-9 ]/g, '');
@@ -328,10 +317,8 @@ const vendas = {
     
     let payload = '000201';
     payload += '010212';
-    
     const merchantInfo = '0014BR.GOV.BCB.PIX' + '01' + String(chave.length).padStart(2, '0') + chave;
     payload += '26' + String(merchantInfo.length).padStart(2, '0') + merchantInfo;
-    
     payload += '52040000';
     payload += '5303986';
     payload += '54' + String(valorStr.length).padStart(2, '0') + valorStr;
@@ -368,38 +355,25 @@ const vendas = {
       modal.innerHTML = `
         <div class="modal" style="max-width: 420px; text-align: center;">
           <h3><i class="fas fa-qrcode" style="color: #8b5cf6;"></i> Pagamento PIX</h3>
-          
           <div style="background: #f3f4f6; padding: 20px; border-radius: 12px; margin: 20px 0;">
-            <p style="margin-bottom: 16px;">
-              <strong>Valor:</strong> 
-              <span style="font-size: 2rem; color: #059669; display: block;">R$ ${valor.toFixed(2)}</span>
-            </p>
-            
+            <p><strong>Valor:</strong> <span style="font-size: 2rem; color: #059669;">R$ ${valor.toFixed(2)}</span></p>
             <div style="background: white; padding: 20px; border-radius: 12px; display: inline-block;">
-              <img src="${qrUrl}" alt="QR Code PIX" style="width: 250px; height: 250px; display: block;">
+              <img src="${qrUrl}" alt="QR Code PIX" style="width: 250px; height: 250px;">
             </div>
-            
-            <p style="color: #6b7280; margin-top: 16px;">
-              <i class="fas fa-mobile-alt"></i> Abra seu banco e escaneie
-            </p>
+            <p style="color: #6b7280; margin-top: 16px;">Abra seu banco e escaneie</p>
           </div>
-          
           <button class="btn btn-outline w-full" onclick="vendas.copiarPix('${payload.replace(/'/g, "\\'")}')">
             <i class="fas fa-copy"></i> Copiar Código PIX
           </button>
-          
           <div style="display: flex; gap: 12px; margin-top: 16px;">
             <button class="btn btn-outline" style="flex: 1;" onclick="this.closest('.modal-overlay').remove(); vendas._pixResolve(false)">Cancelar</button>
-            <button class="btn btn-success" style="flex: 1;" onclick="this.closest('.modal-overlay').remove(); vendas._pixResolve(true)">Confirmar Pagamento</button>
+            <button class="btn btn-success" style="flex: 1;" onclick="this.closest('.modal-overlay').remove(); vendas._pixResolve(true)">Confirmar</button>
           </div>
-          
           <p style="color: #6b7280; font-size: 0.8rem; margin-top: 12px;">
-            Beneficiário: ${this.nomeBeneficiario}<br>
-            Chave: ${this.chavePix}
+            Beneficiário: ${this.nomeBeneficiario}<br>Chave: ${this.chavePix}
           </p>
         </div>
       `;
-      
       document.body.appendChild(modal);
       vendas._pixResolve = resolve;
     });
